@@ -1,0 +1,414 @@
+import { BindJSRuntime } from '@metabindai/bindjs-runtime'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { BASIC_CATALOG, BASIC_CATALOG_ID } from '../src/engine/catalog'
+import { catalogEntry } from '../src/engine/types'
+import { renderSurface } from '../src/engine/render'
+import type { BindJSRuntimeLike, Catalog } from '../src/engine/types'
+import { createStandardRegistry } from '../src/functions/registry'
+import { registerCatalog, type RegistrarRuntime } from '../src/catalog/register'
+import { SurfaceStore } from '../src/store/SurfaceStore'
+import type { A2UIComponent, JsonValue } from '../src/protocol/types'
+
+let runtime: BindJSRuntime
+let consoleErrors: unknown[][]
+
+beforeEach(() => {
+    runtime = new BindJSRuntime()
+    registerCatalog(runtime as unknown as RegistrarRuntime)
+
+    // A body that throws is caught by the runtime and logged, yielding a null AST —
+    // so failures surface here rather than as a silent empty render.
+    consoleErrors = []
+    vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => {
+        consoleErrors.push(args)
+    })
+})
+
+afterEach(() => {
+    vi.restoreAllMocks()
+})
+
+interface RenderCase {
+    components: A2UIComponent[]
+    dataModel?: Record<string, JsonValue>
+    setValue?: (path: string, value: JsonValue) => void
+    onAction?: (message: unknown) => void
+}
+
+function render({ components, dataModel, setValue, onAction }: RenderCase) {
+    const store = new SurfaceStore()
+    store.apply({ createSurface: { surfaceId: 's', components, dataModel } })
+
+    const result = renderSurface({
+        runtime: runtime as unknown as BindJSRuntimeLike,
+        surface: store.requireSurface('s'),
+        catalog: BASIC_CATALOG,
+        registry: createStandardRegistry(),
+        locale: 'en-US',
+        setValue,
+        onAction: onAction as never,
+    })
+
+    return { ...result, unwrapped: runtime.unwrapComponentAST(result.ast) }
+}
+
+function propsOf(ast: unknown): Record<string, unknown> {
+    return (ast as { props: { props: Record<string, unknown> } }).props.props
+}
+
+// One minimal surface per basic-catalog type, each exercising its required props.
+const CASES: Record<string, A2UIComponent[]> = {
+    Text: [{ id: 'root', component: 'Text', text: 'Hello **world**', variant: 'h2' }],
+    Image: [{ id: 'root', component: 'Image', url: 'https://example.com/a.png', description: 'Alt' }],
+    Icon: [{ id: 'root', component: 'Icon', name: 'star.fill' }],
+    Video: [{ id: 'root', component: 'Video', url: 'https://example.com/a.mp4' }],
+    AudioPlayer: [{ id: 'root', component: 'AudioPlayer', url: 'https://example.com/a.mp3', description: 'Episode 12' }],
+    Row: [
+        { id: 'root', component: 'Row', justify: 'spaceBetween', children: ['a', 'b'] },
+        { id: 'a', component: 'Text', text: 'Left' },
+        { id: 'b', component: 'Text', text: 'Right' },
+    ],
+    Column: [
+        { id: 'root', component: 'Column', align: 'center', children: ['a'] },
+        { id: 'a', component: 'Text', text: 'Only' },
+    ],
+    List: [
+        { id: 'root', component: 'List', direction: 'horizontal', children: ['a'] },
+        { id: 'a', component: 'Text', text: 'Row' },
+    ],
+    Card: [
+        { id: 'root', component: 'Card', child: 'a' },
+        { id: 'a', component: 'Text', text: 'Inside' },
+    ],
+    Tabs: [
+        {
+            id: 'root',
+            component: 'Tabs',
+            tabs: [
+                { title: 'One', child: 'a' },
+                { title: 'Two', child: 'b' },
+            ],
+        },
+        { id: 'a', component: 'Text', text: 'First' },
+        { id: 'b', component: 'Text', text: 'Second' },
+    ],
+    Divider: [{ id: 'root', component: 'Divider' }],
+    Modal: [
+        { id: 'root', component: 'Modal', trigger: 'a', content: 'b' },
+        { id: 'a', component: 'Text', text: 'Open' },
+        { id: 'b', component: 'Text', text: 'Body' },
+    ],
+    Button: [
+        { id: 'root', component: 'Button', variant: 'primary', child: 'a', action: { event: { name: 'go' } } },
+        { id: 'a', component: 'Text', text: 'Save' },
+    ],
+    CheckBox: [{ id: 'root', component: 'CheckBox', label: 'Agree', value: true }],
+    TextField: [{ id: 'root', component: 'TextField', label: 'Email', value: 'a@b.co', variant: 'shortText' }],
+    DateTimeInput: [{ id: 'root', component: 'DateTimeInput', label: 'Departure', value: '2026-02-02' }],
+    ChoicePicker: [
+        {
+            id: 'root',
+            component: 'ChoicePicker',
+            label: 'Size',
+            // Selection mode is `variant`, and `value` is always a list — both are easy
+            // to guess wrong, and were.
+            variant: 'mutuallyExclusive',
+            displayStyle: 'chips',
+            value: ['m'],
+            options: [
+                { label: 'Small', value: 's' },
+                { label: 'Medium', value: 'm' },
+            ],
+        },
+    ],
+    Slider: [{ id: 'root', component: 'Slider', label: 'Budget', value: 40, min: 0, max: 100, step: 5 }],
+}
+
+describe('basic catalog', () => {
+    it('registers every type the catalog map names', () => {
+        for (const value of Object.values(BASIC_CATALOG)) {
+            const name = catalogEntry(value)!.component
+
+            expect(runtime.components[name], `${name} not registered`).toBeDefined()
+        }
+    })
+
+    it.each(Object.keys(CASES))('renders %s without runtime errors', (type) => {
+        const { unwrapped, diagnostics } = render({ components: CASES[type] })
+
+        expect(diagnostics).toEqual([])
+        expect(unwrapped, `${type} produced no AST`).not.toBeNull()
+        expect(consoleErrors, `${type} logged a runtime error`).toEqual([])
+    })
+
+    it.each([
+        ['multipleSelection', 'checkbox'],
+        ['multipleSelection', 'chips'],
+        ['mutuallyExclusive', 'checkbox'],
+    ])('renders ChoicePicker as %s / %s', (variant, displayStyle) => {
+        const { unwrapped, diagnostics } = render({
+            components: [
+                {
+                    id: 'root',
+                    component: 'ChoicePicker',
+                    label: 'Toppings',
+                    variant,
+                    displayStyle,
+                    value: ['cheese'],
+                    options: [
+                        { label: 'Cheese', value: 'cheese' },
+                        { label: 'Basil', value: 'basil' },
+                    ],
+                },
+            ],
+        })
+
+        expect(diagnostics).toEqual([])
+        expect(unwrapped).not.toBeNull()
+        expect(consoleErrors).toEqual([])
+    })
+
+    it('writes selection back as a list, even for a single choice', () => {
+        const setValue = vi.fn()
+        const { unwrapped } = render({
+            components: [
+                {
+                    id: 'root',
+                    component: 'ChoicePicker',
+                    variant: 'mutuallyExclusive',
+                    value: { path: '/size' },
+                    options: [
+                        { label: 'Small', value: 's' },
+                        { label: 'Medium', value: 'm' },
+                    ],
+                },
+            ],
+            dataModel: { size: ['s'] },
+            setValue,
+        })
+
+        // `value` is a DynamicStringList, so a bare value would not round-trip.
+        expect(propsOf(unwrapped).value).toEqual(['s'])
+        expect(typeof propsOf(unwrapped).setValue).toBe('function')
+    })
+
+    it.each(['longText', 'obscured', 'number'])('renders TextField variant %s', (variant) => {
+        const { unwrapped } = render({
+            components: [{ id: 'root', component: 'TextField', label: 'Field', value: 'x', variant }],
+        })
+
+        expect(unwrapped).not.toBeNull()
+        expect(consoleErrors).toEqual([])
+    })
+
+    it('writes a TextField edit back to the bound path', () => {
+        const setValue = vi.fn()
+        const { unwrapped } = render({
+            components: [{ id: 'root', component: 'TextField', label: 'Email', value: { path: '/contact/email' } }],
+            dataModel: { contact: { email: 'a@b.co' } },
+            setValue,
+        })
+
+        const props = propsOf(unwrapped)
+        expect(props.value).toBe('a@b.co')
+        ;(props.setValue as (value: JsonValue) => void)('new@b.co')
+
+        expect(setValue).toHaveBeenCalledWith('/contact/email', 'new@b.co')
+    })
+
+    it('fires a Button action', () => {
+        const onAction = vi.fn()
+        const { unwrapped } = render({
+            components: [
+                { id: 'root', component: 'Button', child: 'a', action: { event: { name: 'go', context: { id: { path: '/id' } } } } },
+                { id: 'a', component: 'Text', text: 'Save' },
+            ],
+            dataModel: { id: 'abc' },
+            onAction,
+        })
+
+        ;(propsOf(unwrapped).action as () => void)()
+
+        expect(onAction).toHaveBeenCalledOnce()
+        expect(onAction.mock.calls[0][0]).toMatchObject({ name: 'go', context: { id: 'abc' } })
+    })
+
+    it('keeps a disabled Button renderable', () => {
+        const { unwrapped } = render({
+            components: [
+                { id: 'root', component: 'Button', enabled: false, child: 'a', action: { event: { name: 'go' } } },
+                { id: 'a', component: 'Text', text: 'Nope' },
+            ],
+        })
+
+        expect(unwrapped).not.toBeNull()
+        expect(consoleErrors).toEqual([])
+    })
+
+    // A subtree hanging off a non-standard slot produces no diagnostic when it is
+    // ignored — it just silently never renders. These assert it is actually built.
+    it('builds Modal trigger and content, not just the root', () => {
+        const { unwrapped, nodeCount, diagnostics } = render({ components: CASES.Modal })
+
+        expect(diagnostics).toEqual([])
+        expect(nodeCount).toBe(3)
+
+        const props = propsOf(unwrapped)
+        expect(props.trigger).toBeDefined()
+        expect(props.content).toBeDefined()
+        expect(props.child).toBeUndefined()
+    })
+
+    it('builds every Tabs panel and resolves its title', () => {
+        const { unwrapped, nodeCount, diagnostics } = render({ components: CASES.Tabs })
+
+        expect(diagnostics).toEqual([])
+        expect(nodeCount).toBe(3)
+
+        const tabs = propsOf(unwrapped).tabs as Array<{ title: string; child: unknown }>
+        expect(tabs).toHaveLength(2)
+        expect(tabs[0].title).toBe('One')
+        expect(tabs[0].child).toBeDefined()
+        expect(tabs[1].child).toBeDefined()
+    })
+
+    it('resolves a dynamic tab title from the data model', () => {
+        const { unwrapped } = render({
+            components: [
+                { id: 'root', component: 'Tabs', tabs: [{ title: { path: '/label' }, child: 'a' }] },
+                { id: 'a', component: 'Text', text: 'Panel' },
+            ],
+            dataModel: { label: 'Bound Title' },
+        })
+
+        const tabs = propsOf(unwrapped).tabs as Array<{ title: string }>
+        expect(tabs[0].title).toBe('Bound Title')
+    })
+
+    it('passes child weights to a Row so it can distribute space', () => {
+        const { unwrapped } = render({
+            components: [
+                { id: 'root', component: 'Row', children: ['a', 'b'] },
+                { id: 'a', component: 'Text', text: 'Wide', weight: 2 },
+                { id: 'b', component: 'Text', text: 'Narrow' },
+            ],
+        })
+
+        expect(propsOf(unwrapped).childWeights).toEqual([2, 0])
+    })
+
+    it('omits childWeights when no child declares one', () => {
+        const { unwrapped } = render({ components: CASES.Row })
+
+        expect(propsOf(unwrapped).childWeights).toBeUndefined()
+    })
+
+    it('renders a template-driven List lazily through the catalog', () => {
+        const { unwrapped, diagnostics, nodeCount } = render({
+            components: [
+                { id: 'root', component: 'List', children: { path: '/items', componentId: 'row' } },
+                { id: 'row', component: 'Text', text: { path: 'label' } },
+            ],
+            dataModel: { items: [{ label: 'One' }, { label: 'Two' }, { label: 'Three' }] },
+        })
+
+        expect(diagnostics).toEqual([])
+        expect(unwrapped).not.toBeNull()
+        expect(nodeCount).toBe(1)
+        expect(consoleErrors).toEqual([])
+    })
+})
+
+describe('non-string bindings', () => {
+    // A2UI's DynamicString resolves to whatever the data model holds, so a binding to a
+    // number or boolean arrives as one. A builder that throws on it takes out the entire
+    // surface, because bindjs-react's ErrorBoundary falls back to an empty div — the
+    // failure is silent and total, so it is worth pinning per component.
+    it.each([
+        ['number', 4.9],
+        ['boolean', true],
+        ['zero', 0],
+        ['null', null],
+    ])('renders Text bound to %s', (_label, value) => {
+        const { unwrapped, diagnostics } = render({
+            components: [{ id: 'root', component: 'Text', text: { path: '/v' } }],
+            dataModel: { v: value as JsonValue },
+        })
+
+        expect(diagnostics).toEqual([])
+        expect(unwrapped).not.toBeNull()
+        expect(consoleErrors).toEqual([])
+    })
+
+    it.each([
+        ['Icon', 'name'],
+        ['CheckBox', 'label'],
+        ['Slider', 'label'],
+        ['TextField', 'label'],
+        ['DateTimeInput', 'label'],
+        ['Image', 'description'],
+    ])('renders %s with a numeric %s', (component, prop) => {
+        const { unwrapped, diagnostics } = render({
+            components: [{ id: 'root', component, [prop]: { path: '/v' }, url: 'https://example.com/a.png' }],
+            dataModel: { v: 42 },
+        })
+
+        expect(diagnostics).toEqual([])
+        expect(unwrapped).not.toBeNull()
+        expect(consoleErrors).toEqual([])
+    })
+})
+
+describe('catalog resolution', () => {
+    const CUSTOM_ID = 'https://metabind.ai/a2ui/catalogs/demo/catalog.json'
+    const DEMO_TEXT = 'exports.default = defineComponent({ body: (props) => Text(props.text), properties: {} })'
+
+    function renderWith(components: A2UIComponent[], catalogs?: Record<string, Catalog>, catalogId?: string) {
+        const store = new SurfaceStore()
+        store.apply({ createSurface: { surfaceId: 's', catalogId, components } })
+
+        return renderSurface({
+            runtime: runtime as unknown as BindJSRuntimeLike,
+            surface: store.requireSurface('s'),
+            catalog: BASIC_CATALOG,
+            catalogs,
+            registry: createStandardRegistry(),
+        })
+    }
+
+    it('renders through the surface catalog when it is the default one', () => {
+        const result = renderWith([{ id: 'root', component: 'Text', text: 'hi' }], undefined, BASIC_CATALOG_ID)
+
+        expect(result.diagnostics).toEqual([])
+        expect(result.ast).toBeDefined()
+    })
+
+    it('renders through a registered custom catalog', () => {
+        runtime.registerComponent('DemoText', DEMO_TEXT)
+
+        const result = renderWith([{ id: 'root', component: 'Text', text: 'hi' }], { [CUSTOM_ID]: { Text: 'DemoText' } }, CUSTOM_ID)
+
+        expect(result.diagnostics).toEqual([])
+        expect(propsOf(runtime.unwrapComponentAST(result.ast)).text).toBe('hi')
+    })
+
+    it("lets a component override its surface's catalog", () => {
+        runtime.registerComponent('DemoText', DEMO_TEXT)
+
+        const result = renderWith(
+            [
+                { id: 'root', component: 'Column', children: ['a'] },
+                { id: 'a', component: 'Text', text: 'hi', catalogId: CUSTOM_ID },
+            ],
+            { [CUSTOM_ID]: { Text: 'DemoText' } },
+            BASIC_CATALOG_ID
+        )
+
+        expect(result.diagnostics).toEqual([])
+
+        const rendered = JSON.stringify(runtime.unwrapComponentAST(result.ast))
+        expect(rendered).toContain('DemoText')
+        expect(rendered).toContain('A2UIColumn')
+    })
+})

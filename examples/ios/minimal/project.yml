@@ -1,0 +1,51 @@
+# Regenerate with `xcodegen` (brew install xcodegen).
+#
+# The checked-in `.xcodeproj` is generated from this file. It exists so the example can be
+# opened and run without any tooling; this file is the source of truth for what it contains.
+name: A2UIMinimal
+
+options:
+    bundleIdPrefix: ai.metabind
+    deploymentTarget:
+        iOS: "17.0"
+    createIntermediateGroups: true
+    groupSortPosition: none
+
+packages:
+    # What would ship as `a2ui-bindjs-apple`; it carries the renderer bundle as a resource
+    # and depends on the vendored `bindjs-apple` itself.
+    A2UI:
+        path: ../../../ios/packages/a2ui-bindjs-apple
+
+targets:
+    A2UIMinimal:
+        type: application
+        platform: iOS
+
+        sources:
+            - path: Sources/A2UIMinimal
+
+        dependencies:
+            - package: A2UI
+              product: A2UI
+
+        info:
+            path: Generated/Info.plist
+            properties:
+                CFBundleDisplayName: A2UI
+                UILaunchScreen: {}
+                UISupportedInterfaceOrientations:
+                    - UIInterfaceOrientationPortrait
+                    - UIInterfaceOrientationLandscapeLeft
+                    - UIInterfaceOrientationLandscapeRight
+
+        # Shared, so the checked-in project is runnable without regenerating it.
+        scheme:
+            testTargets: []
+
+        settings:
+            base:
+                PRODUCT_BUNDLE_IDENTIFIER: ai.metabind.a2ui.minimal
+                SWIFT_VERSION: "5.0"
+                TARGETED_DEVICE_FAMILY: "1,2"
+                ENABLE_USER_SCRIPT_SANDBOXING: NO

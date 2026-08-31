@@ -1,0 +1,23 @@
+{
+  "pins" : [
+    {
+      "identity" : "gltfkit2",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/warrenm/GLTFKit2",
+      "state" : {
+        "revision" : "c4509232470777e51ecffa626597ff9b4da170f5",
+        "version" : "0.5.14"
+      }
+    },
+    {
+      "identity" : "svgview",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/yapstudios/SVGView.git",
+      "state" : {
+        "revision" : "5266e544b93ce541b195d21be3a917f7d5fcbc87",
+        "version" : "1.0.7"
+      }
+    }
+  ],
+  "version" : 2
+}

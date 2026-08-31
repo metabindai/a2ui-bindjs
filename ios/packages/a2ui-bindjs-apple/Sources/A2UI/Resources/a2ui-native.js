@@ -1,0 +1,2116 @@
+"use strict";
+var A2UI = (() => {
+  var __defProp = Object.defineProperty;
+  var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+  var __getOwnPropNames = Object.getOwnPropertyNames;
+  var __hasOwnProp = Object.prototype.hasOwnProperty;
+  var __typeError = (msg) => {
+    throw TypeError(msg);
+  };
+  var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+  var __export = (target, all) => {
+    for (var name in all)
+      __defProp(target, name, { get: all[name], enumerable: true });
+  };
+  var __copyProps = (to, from, except, desc) => {
+    if (from && typeof from === "object" || typeof from === "function") {
+      for (let key of __getOwnPropNames(from))
+        if (!__hasOwnProp.call(to, key) && key !== except)
+          __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+    }
+    return to;
+  };
+  var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+  var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
+  var __accessCheck = (obj, member, msg) => member.has(obj) || __typeError("Cannot " + msg);
+  var __privateGet = (obj, member, getter) => (__accessCheck(obj, member, "read from private field"), getter ? getter.call(obj) : member.get(obj));
+  var __privateAdd = (obj, member, value) => member.has(obj) ? __typeError("Cannot add the same private member more than once") : member instanceof WeakSet ? member.add(obj) : member.set(obj, value);
+  var __privateSet = (obj, member, value, setter) => (__accessCheck(obj, member, "write to private field"), setter ? setter.call(obj, value) : member.set(obj, value), value);
+  var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "access private method"), method);
+
+  // src/native/global.ts
+  var global_exports = {};
+  __export(global_exports, {
+    bridge: () => bridge
+  });
+
+  // src/engine/basicCatalog.generated.ts
+  var BASIC_CATALOG_COMPONENTS = [
+    "AudioPlayer",
+    "Button",
+    "Card",
+    "CheckBox",
+    "ChoicePicker",
+    "Column",
+    "DateTimeInput",
+    "Divider",
+    "Icon",
+    "Image",
+    "List",
+    "Modal",
+    "Row",
+    "Slider",
+    "Tabs",
+    "Text",
+    "TextField",
+    "Video"
+  ];
+  var BASIC_CATALOG_SLOTS = {
+    Button: [
+      {
+        prop: "child",
+        kind: "single"
+      }
+    ],
+    Card: [
+      {
+        prop: "child",
+        kind: "single"
+      }
+    ],
+    Column: [
+      {
+        prop: "children",
+        kind: "list"
+      }
+    ],
+    List: [
+      {
+        prop: "children",
+        kind: "list"
+      }
+    ],
+    Modal: [
+      {
+        prop: "trigger",
+        kind: "single"
+      },
+      {
+        prop: "content",
+        kind: "single"
+      }
+    ],
+    Row: [
+      {
+        prop: "children",
+        kind: "list"
+      }
+    ],
+    Tabs: [
+      {
+        prop: "tabs",
+        kind: "objectList",
+        childKey: "child"
+      }
+    ]
+  };
+
+  // src/engine/catalog.ts
+  var BASIC_CATALOG_ID = "https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json";
+  var BASIC_CATALOG_ID_V0_9 = "https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json";
+  var BASIC_CATALOG_ID_V0_9_FLAT = "https://a2ui.org/specification/v0_9/basic_catalog.json";
+  var BASIC_CATALOG_IDS = [BASIC_CATALOG_ID, BASIC_CATALOG_ID_V0_9, BASIC_CATALOG_ID_V0_9_FLAT];
+  var STATEFUL_TYPES = /* @__PURE__ */ new Set(["Modal", "Tabs"]);
+  var BASIC_CATALOG = Object.fromEntries(
+    BASIC_CATALOG_COMPONENTS.map((type) => [
+      type,
+      {
+        component: `A2UI${type}`,
+        slots: BASIC_CATALOG_SLOTS[type] ?? [],
+        stateful: STATEFUL_TYPES.has(type)
+      }
+    ])
+  );
+
+  // src/catalog/basic/sources.generated.ts
+  var BASIC_CATALOG_SOURCES = {
+    "A2UIAudioPlayer": `// A2UI Basic Catalog \u2192 BindJS: \`AudioPlayer\`
+//
+// A2UI props: url (required), description.
+// Interim implementation over the video built-in, kept short so it reads as a control
+// strip rather than a video frame, pending a native audio builder.
+
+/**
+ * A2UI's DynamicString resolves to whatever the data model holds, so a binding can arrive
+ * as a number or a boolean. Builders that expect a string throw on those, and the throw
+ * takes out the whole surface \u2014 bindjs-react's ErrorBoundary renders an empty div.
+ */
+const asText = (value) => (value === null || value === undefined ? '' : String(value))
+
+exports.default = defineComponent({
+    metadata: {
+        title: "A2UIAudioPlayer",
+        description: "A2UI AudioPlayer primitive \u2014 interim implementation over the video built-in.",
+        category: "A2UI",
+    },
+
+    properties: {
+        url: { type: "string", required: true, defaultValue: "" },
+        description: { type: "string", defaultValue: "" },
+    },
+
+    body: (props) => {
+        const player = Video({ url: asText(props.url) }).frame({ maxWidth: Infinity, height: 64 }).cornerRadius(8)
+
+        if (!props.description) {
+            return player
+        }
+
+        return VStack({ spacing: 4, alignment: "leading" }, [
+            Text(asText(props.description)).font("caption").foregroundStyle(Color("secondary")),
+            player,
+        ]).frame({ maxWidth: Infinity, alignment: "leading" })
+    },
+
+    previews: [Self({ url: "https://example.com/track.mp3", description: "Episode 12" }).previewName("Default")],
+});
+`,
+    "A2UIButton": '// A2UI Basic Catalog \u2192 BindJS: `Button`\n//\n// A2UI props: child (required label), variant, plus an `action` on the node.\n//\n// The engine resolves the A2UI action \u2014 event name, resolved context, any local\n// functionCall \u2014 into a single `props.action` callback, so nothing about the wire\n// protocol reaches this component. Dispatch is the engine\'s job; this file is only\n// about how a button looks and that it is tappable.\n\nexports.default = defineComponent({\n    metadata: {\n        title: "A2UIButton",\n        description: "A2UI Button primitive \u2014 variant styling over an engine-supplied action.",\n        category: "A2UI",\n    },\n\n    properties: {\n        variant: { type: "enum", options: ["default", "primary", "borderless"], defaultValue: "default" },\n        enabled: { type: "boolean", defaultValue: true },\n    },\n\n    body: (props, children) => {\n        // `properties.defaultValue` is inspector metadata and is NOT applied at runtime,\n        // so an omitted `enabled` arrives as undefined \u2014 compare against false, because\n        // `!undefined` would disable every button that never set the prop.\n        const enabled = props.enabled !== false\n        const action = typeof props.action === "function" ? props.action : () => {}\n        const label = children && children.length > 0 ? HStack({ spacing: 6 }, children) : Text("Button")\n\n        let styled\n\n        if (props.variant === "primary") {\n            styled = label\n                .padding({ horizontal: 16, vertical: 10 })\n                .background(Color("accent"))\n                .foregroundStyle(Color("white"))\n                .cornerRadius(10)\n        } else if (props.variant === "borderless") {\n            styled = label.padding({ horizontal: 4, vertical: 4 }).foregroundStyle(Color("accent"))\n        } else {\n            styled = label\n                .padding({ horizontal: 16, vertical: 10 })\n                .background(Color("quaternary"))\n                .cornerRadius(10)\n        }\n\n        const button = Button(styled, action)\n\n        return enabled ? button : button.disabled(true).opacity(0.5)\n    },\n\n    previews: [\n        Self({ variant: "primary" }, [Text("Add to cart")]).previewName("Primary"),\n        Self({}, [Text("Cancel")]).previewName("Default"),\n        Self({ variant: "borderless" }, [Text("Learn more")]).previewName("Borderless"),\n        Self({ variant: "primary", enabled: false }, [Text("Unavailable")]).previewName("Disabled"),\n    ],\n});\n',
+    "A2UICard": '// A2UI Basic Catalog \u2192 BindJS: `Card`\n//\n// A2UI props: child (required).\n\nexports.default = defineComponent({\n    metadata: {\n        title: "A2UICard",\n        description: "A2UI Card primitive \u2014 elevated container for a single child.",\n        category: "A2UI",\n    },\n\n    properties: {},\n\n    body: (props, children) => {\n        return VStack({ spacing: 0, alignment: "leading" }, children ?? [])\n            .padding(16)\n            .frame({ maxWidth: Infinity, alignment: "leading" })\n            .background(Color("background"))\n            .cornerRadius(12)\n            .shadow()\n    },\n\n    previews: [Self({}, [Text("Card contents")]).previewName("Default")],\n});\n',
+    "A2UICheckBox": '// A2UI Basic Catalog \u2192 BindJS: `CheckBox`\n//\n// A2UI props: label, value (two-way bound boolean).\n// Stateless for the same reason as A2UITextField \u2014 the data model owns the value.\n\n/**\n * A2UI\'s DynamicString resolves to whatever the data model holds, so a binding can arrive\n * as a number or a boolean. Builders that expect a string throw on those, and the throw\n * takes out the whole surface - bindjs-react\'s ErrorBoundary renders an empty div.\n */\nconst asText = (value) => (value === null || value === undefined ? "" : String(value))\n\nexports.default = defineComponent({\n    metadata: {\n        title: "A2UICheckBox",\n        description: "A2UI CheckBox primitive \u2014 controlled boolean toggle.",\n        category: "A2UI",\n    },\n\n    properties: {\n        label: { type: "string", defaultValue: "" },\n        value: { type: "boolean", defaultValue: false },\n    },\n\n    body: (props) => {\n        const setIsOn = typeof props.setValue === "function" ? props.setValue : () => {}\n\n        return Toggle({ label: asText(props.label), isOn: props.value === true, setIsOn }).frame({ maxWidth: Infinity })\n    },\n\n    previews: [\n        Self({ label: "Subscribe to updates", value: true }).previewName("Checked"),\n        Self({ label: "Subscribe to updates", value: false }).previewName("Unchecked"),\n    ],\n});\n',
+    "A2UIChoicePicker": "// A2UI Basic Catalog \u2192 BindJS: `ChoicePicker`\n//\n// A2UI props: label, options (array of { label, value }), value, variant, displayStyle,\n// filterable.\n//\n// Two things here are easy to get wrong, and were:\n//\n//   - Selection mode comes from `variant` \u2014 \"mutuallyExclusive\" (the default) or\n//     \"multipleSelection\". There is no boolean.\n//   - `value` is a DynamicStringList: it is *always* an array, even when only one option\n//     may be selected. Writing a bare value back would not round-trip.\n//\n// Single selection is a `Picker`, so each platform draws its own control: a segmented\n// control on iOS, a `<select>` on the web. `displayStyle` is a hint, and the platform's\n// native single-select control answers it better than either of the styles it names \u2014 so\n// it only chooses between chips and checkbox rows for multiple selection.\n//\n// Beyond a handful of options a segmented control is unreadable, so the style drops to\n// `automatic` (a menu natively, the same `<select>` on the web).\n//\n// `filterable` is not implemented yet, and is ignored rather than pretended.\n\n/**\n * A2UI's DynamicString resolves to whatever the data model holds, so a binding can arrive\n * as a number or a boolean. Builders that expect a string throw on those, and the throw\n * takes out the whole surface - bindjs-react's ErrorBoundary renders an empty div.\n */\nconst asText = (value) => (value === null || value === undefined ? '' : String(value))\n\n/** More than this in a segmented control and the labels stop being readable. */\nconst SEGMENTED_LIMIT = 5\n\nconst optionValue = (option) => (option && typeof option === 'object' ? option.value : option)\nconst optionLabel = (option) => asText(option && typeof option === 'object' ? (option.label ?? option.value) : option)\n\nexports.default = defineComponent({\n    metadata: {\n        title: 'A2UIChoicePicker',\n        description: 'A2UI ChoicePicker primitive \u2014 chips or checkbox rows, single or multiple selection.',\n        category: 'A2UI',\n    },\n\n    properties: {\n        label: { type: 'string', defaultValue: '' },\n        variant: { type: 'enum', options: ['mutuallyExclusive', 'multipleSelection'], defaultValue: 'mutuallyExclusive' },\n        displayStyle: { type: 'enum', options: ['chips', 'checkbox'], defaultValue: 'checkbox' },\n    },\n\n    body: (props) => {\n        const options = Array.isArray(props.options) ? props.options : []\n        const selected = Array.isArray(props.value) ? props.value : props.value === undefined ? [] : [props.value]\n        const setValue = typeof props.setValue === 'function' ? props.setValue : () => {}\n\n        const multiple = props.variant === 'multipleSelection'\n\n        // Only the multiple-selection branches reach this; single selection is a Picker,\n        // which reports the new value rather than a change to the old one.\n        const toggle = (value) => {\n            const isOn = selected.indexOf(value) >= 0\n\n            return setValue(isOn ? selected.filter((entry) => entry !== value) : selected.concat([value]))\n        }\n\n        const caption = props.label ? [Text(asText(props.label)).font('caption').foregroundStyle(Color('secondary'))] : []\n\n        // One choice: the platform's own control, which is the whole point of naming a\n        // component rather than describing a layout.\n        if (!multiple) {\n            const items = options.map((option) => Text(optionLabel(option)).tag(asText(optionValue(option))))\n\n            // The label is empty because the caption above already carries it \u2014 a segmented\n            // control does not show one, but a menu would, and it would read twice.\n            const picker = Picker('', [asText(selected[0]), (value) => setValue([value])], items).pickerStyle(\n                options.length > SEGMENTED_LIMIT ? 'automatic' : 'segmented'\n            )\n\n            return VStack({ spacing: 8, alignment: 'leading' }, [...caption, picker]).frame({\n                maxWidth: Infinity,\n                alignment: 'leading',\n            })\n        }\n\n        if (props.displayStyle === 'chips') {\n            const chips = options.map((option) => {\n                const value = optionValue(option)\n                const isOn = selected.indexOf(value) >= 0\n\n                const chip = Text(optionLabel(option))\n                    .font('subheadline')\n                    .padding({ horizontal: 14, vertical: 8 })\n                    .background(Color(isOn ? 'accent' : 'clear'))\n                    .foregroundStyle(Color(isOn ? 'white' : 'primary'))\n                    .cornerRadius(999)\n                    .id(optionLabel(option + (isOn ? '1' : '0')))\n\n                return Button(chip, () => toggle(value)).id(optionLabel(option + (isOn ? '1' : '0')))\n            })\n\n            // Array literal, not `.concat`: the props-form of a layout is strict about\n            // receiving `Component[]`, and `metabind validate` checks for it statically.\n            return VStack({ spacing: 8, alignment: 'leading' }, [...caption, HStack({ spacing: 8 }, chips)]).frame({\n                maxWidth: Infinity,\n                alignment: 'leading',\n            })\n        }\n\n        const rows = options.map((option) => {\n            const value = optionValue(option)\n\n            return Toggle({\n                label: optionLabel(option),\n                isOn: selected.indexOf(value) >= 0,\n                setIsOn: () => toggle(value),\n            })\n        })\n\n        return VStack({ spacing: 8, alignment: 'leading' }, [...caption, ...rows]).frame({\n            maxWidth: Infinity,\n            alignment: 'leading',\n        })\n    },\n\n    previews: [\n        Self({\n            label: 'Cooking style',\n            variant: 'mutuallyExclusive',\n            displayStyle: 'chips',\n            value: ['Grilled'],\n            options: [\n                { label: 'Grilled', value: 'Grilled' },\n                { label: 'Baked', value: 'Baked' },\n            ],\n        }).previewName('Segmented, single'),\n\n        Self({\n            label: 'Portion',\n            variant: 'mutuallyExclusive',\n            value: ['4'],\n            options: ['1', '2', '3', '4', '6', '8', '12'].map((size) => ({ label: size, value: size })),\n        }).previewName('Too many for segments'),\n\n        Self({\n            label: 'Toppings',\n            variant: 'multipleSelection',\n            displayStyle: 'checkbox',\n            value: ['cheese'],\n            options: [\n                { label: 'Cheese', value: 'cheese' },\n                { label: 'Basil', value: 'basil' },\n            ],\n        }).previewName('Checkboxes, multiple'),\n    ],\n})\n",
+    "A2UIColumn": '// A2UI Basic Catalog \u2192 BindJS: `Column`\n//\n// A2UI props: children (required), justify, align.\n// The vertical twin of A2UIRow \u2014 see that file for the Spacer-based justify notes.\n\nconst ALIGNMENT = { start: "leading", center: "center", end: "trailing", stretch: "leading" }\n\nexports.default = defineComponent({\n    metadata: {\n        title: "A2UIColumn",\n        description: "A2UI Column primitive \u2014 vertical container with justify / align distribution.",\n        category: "A2UI",\n    },\n\n    properties: {\n        justify: { type: "enum", options: ["start", "center", "end", "spaceBetween"], defaultValue: "start" },\n        align: { type: "enum", options: ["start", "center", "end", "stretch"], defaultValue: "start" },\n        spacing: { type: "number", defaultValue: 12 },\n    },\n\n    body: (props, children) => {\n        // `weight` lets a child claim proportional space. Only the engine can see each\n        // child node\'s weight, so it passes them down as `childWeights`.\n        const weights = Array.isArray(props.childWeights) ? props.childWeights : []\n\n        const items = (children ?? []).map((child, index) => {\n            const weight = weights[index]\n\n            if (typeof weight !== "number" || weight <= 0) {\n                return child\n            }\n\n            return child.frame({ maxWidth: Infinity }).layoutPriority(weight)\n        })\n        const justify = props.justify ?? "start"\n\n        let laidOut = items\n\n        if (justify === "center") {\n            laidOut = [Spacer(), ...items, Spacer()]\n        } else if (justify === "end") {\n            laidOut = [Spacer(), ...items]\n        } else if (justify === "spaceBetween") {\n            laidOut = items.flatMap((child, index) => (index === 0 ? [child] : [Spacer(), child]))\n        }\n\n        return VStack({ spacing: props.spacing ?? 12, alignment: ALIGNMENT[props.align] || "leading" }, laidOut)\n            .frame({ maxWidth: Infinity, alignment: "leading" })\n    },\n\n    previews: [Self({}, [Text("First"), Text("Second"), Text("Third")]).previewName("Default")],\n});\n',
+    "A2UIDateTimeInput": `// A2UI Basic Catalog \u2192 BindJS: \`DateTimeInput\`
+//
+// A2UI props: label, value (two-way bound ISO 8601 string), mode.
+//
+// Interim implementation: an ISO text field. BindJS registers a DatePicker built-in,
+// but it exchanges Date objects while A2UI's data model carries ISO strings, so the
+// conversion belongs here once the native builder's contract is pinned down.
+
+/**
+ * A2UI's DynamicString resolves to whatever the data model holds, so a binding can arrive
+ * as a number or a boolean. Builders that expect a string throw on those, and the throw
+ * takes out the whole surface - bindjs-react's ErrorBoundary renders an empty div.
+ */
+const asText = (value) => (value === null || value === undefined ? "" : String(value))
+
+exports.default = defineComponent({
+    metadata: {
+        title: "A2UIDateTimeInput",
+        description: "A2UI DateTimeInput primitive \u2014 controlled ISO 8601 input.",
+        category: "A2UI",
+    },
+
+    properties: {
+        label: { type: "string", defaultValue: "" },
+        value: { type: "string", defaultValue: "" },
+        mode: { type: "enum", options: ["date", "time", "dateTime"], defaultValue: "date" },
+    },
+
+    body: (props) => {
+        const text = props.value === undefined || props.value === null ? "" : String(props.value)
+        const setText = typeof props.setValue === "function" ? props.setValue : () => {}
+        const placeholder = props.mode === "time" ? "HH:MM" : "YYYY-MM-DD"
+
+        const field = TextField({ placeholder, text, setText })
+            .padding(10)
+            .background(Color("quaternary"))
+            .cornerRadius(8)
+
+        if (!props.label) {
+            return field
+        }
+
+        return VStack({ spacing: 4, alignment: "leading" }, [
+            Text(asText(props.label)).font("caption").foregroundStyle(Color("secondary")),
+            field,
+        ]).frame({ maxWidth: Infinity, alignment: "leading" })
+    },
+
+    previews: [Self({ label: "Departure", value: "2026-02-02" }).previewName("Date")],
+});
+`,
+    "A2UIDivider": '// A2UI Basic Catalog \u2192 BindJS: `Divider`\n//\n// A2UI props: none.\n\nexports.default = defineComponent({\n    metadata: {\n        title: "A2UIDivider",\n        description: "A2UI Divider primitive.",\n        category: "A2UI",\n    },\n\n    properties: {},\n\n    body: () => Divider(),\n\n    previews: [Self({}).previewName("Default")],\n});\n',
+    "A2UIIcon": '// A2UI Basic Catalog \u2192 BindJS: `Icon`\n//\n// A2UI props: name (required \u2014 a platform-neutral icon name), size.\n// Named icons map to the platform symbol set; an inline SVG path is passed straight\n// through for names the platform does not know.\n\n/**\n * A2UI\'s DynamicString resolves to whatever the data model holds, so a binding can arrive\n * as a number or a boolean. Builders that expect a string throw on those, and the throw\n * takes out the whole surface - bindjs-react\'s ErrorBoundary renders an empty div.\n */\nconst asText = (value) => (value === null || value === undefined ? "" : String(value))\n\nexports.default = defineComponent({\n    metadata: {\n        title: "A2UIIcon",\n        description: "A2UI Icon primitive \u2014 named platform symbols or inline SVG path data.",\n        category: "A2UI",\n    },\n\n    properties: {\n        name: { type: "string", required: true, defaultValue: "star" },\n        size: { type: "number", defaultValue: 24 },\n    },\n\n    body: (props) => {\n        const size = props.size ?? 24\n        const name = asText(props.name)\n\n        // A path payload rather than a symbol name.\n        if (name.indexOf("M") === 0 || name.indexOf("<svg") === 0) {\n            return Image({ svg: name }).frame({ width: size, height: size })\n        }\n\n        return Image({ systemName: name }).resizable().aspectRatio({ contentMode: "fit" }).frame({ width: size, height: size })\n    },\n\n    previews: [Self({ name: "star.fill" }).previewName("Symbol")],\n});\n',
+    "A2UIImage": `// A2UI Basic Catalog \u2192 BindJS: \`Image\`
+//
+// A2UI props: url (required), description (alt text), fit, variant.
+// \`variant\` is A2UI's size hint; it maps onto a height so images in a stream do not
+// each pick their own intrinsic size.
+
+const HEIGHTS = { smallIcon: 32, mediumIcon: 48, largeIcon: 72, smallFeature: 120, mediumFeature: 200, largeFeature: 320 }
+
+/**
+ * A2UI's DynamicString resolves to whatever the data model holds, so a binding can arrive
+ * as a number or a boolean. Builders that expect a string throw on those, and the throw
+ * takes out the whole surface \u2014 bindjs-react's ErrorBoundary renders an empty div.
+ */
+const asText = (value) => (value === null || value === undefined ? '' : String(value))
+
+exports.default = defineComponent({
+    metadata: {
+        title: "A2UIImage",
+        description: "A2UI Image primitive with fit and size-variant mapping.",
+        category: "A2UI",
+    },
+
+    properties: {
+        url: { type: "string", required: true, defaultValue: "" },
+        description: { type: "string", defaultValue: "" },
+        fit: { type: "enum", options: ["fill", "contain", "cover"], defaultValue: "fill" },
+        variant: { type: "enum", options: Object.keys(HEIGHTS), defaultValue: "mediumFeature" },
+    },
+
+    body: (props) => {
+        const height = HEIGHTS[props.variant] ?? HEIGHTS.mediumFeature
+        const contentMode = props.fit === "contain" ? "fit" : "fill"
+
+        const image = Image({ url: asText(props.url) })
+            .resizable()
+            .aspectRatio({ contentMode })
+            .frame({ maxWidth: Infinity, height })
+            .clipped()
+            .cornerRadius(8)
+
+        return props.description ? image.accessibilityLabel(asText(props.description)) : image
+    },
+
+    previews: [Self({ url: "https://picsum.photos/600/400", description: "Scenery" }).previewName("Default")],
+});
+`,
+    "A2UIList": '// A2UI Basic Catalog \u2192 BindJS: `List`\n//\n// A2UI props: children (required \u2014 often the template form), direction, align.\n//\n// Lazy stacks inside a ScrollView are the point of this component: the engine emits\n// template children as a BindJS ForEach, which builds rows on demand, and LazyVStack\n// recycles them natively on iOS / Android.\n\nconst V_ALIGN = { start: "leading", center: "center", end: "trailing", stretch: "leading" }\nconst H_ALIGN = { start: "top", center: "center", end: "bottom", stretch: "top" }\n\nexports.default = defineComponent({\n    metadata: {\n        title: "A2UIList",\n        description: "A2UI List primitive \u2014 scrollable lazy stack, vertical or horizontal.",\n        category: "A2UI",\n    },\n\n    properties: {\n        direction: { type: "enum", options: ["vertical", "horizontal"], defaultValue: "vertical" },\n        align: { type: "enum", options: ["start", "center", "end", "stretch"], defaultValue: "stretch" },\n        spacing: { type: "number", defaultValue: 8 },\n    },\n\n    body: (props, children) => {\n        const items = children ?? []\n        const spacing = props.spacing ?? 8\n\n        if (props.direction === "horizontal") {\n            return ScrollView({ axis: "horizontal", showsIndicators: false }, [\n                LazyHStack({ spacing, alignment: H_ALIGN[props.align] || "top" }, items),\n            ])\n        }\n\n        return ScrollView({ axis: "vertical", showsIndicators: true }, [\n            LazyVStack({ spacing, alignment: V_ALIGN[props.align] || "leading" }, items),\n        ])\n    },\n\n    previews: [\n        Self({}, [Text("Row 1"), Text("Row 2"), Text("Row 3")]).previewName("Vertical"),\n        Self({ direction: "horizontal" }, [Text("A"), Text("B"), Text("C")]).previewName("Horizontal"),\n    ],\n});\n',
+    "A2UIModal": '// A2UI Basic Catalog \u2192 BindJS: `Modal`\n//\n// A2UI props: trigger (required), content (required) \u2014 both component ids, built by\n// the engine and passed here as components.\n//\n// As with Tabs, the v1.0 basic catalog gives Modal no property for open state, so it is\n// renderer state by definition.\n\nexports.default = defineComponent({\n    metadata: {\n        title: "A2UIModal",\n        description: "A2UI Modal primitive \u2014 a trigger that reveals overlay content.",\n        category: "A2UI",\n    },\n\n    properties: {},\n\n    body: (props) => {\n        const [open, setOpen] = useState(false)\n\n        const trigger = Button(props.trigger ?? Text("Open"), () => setOpen(true))\n\n        if (!open) {\n            return trigger\n        }\n\n        const header = HStack({ spacing: 8 }, [\n            Spacer(),\n            Button(Text("Close").font("subheadline").foregroundStyle(Color("accent")), () => setOpen(false)),\n        ])\n\n        const panel = VStack({ spacing: 12, alignment: "leading" }, [header, props.content ?? Empty()])\n            .padding(16)\n            .frame({ maxWidth: Infinity, alignment: "leading" })\n            .background(Color("background"))\n            .cornerRadius(14)\n\n        return VStack({ spacing: 12, alignment: "leading" }, [trigger, panel])\n    },\n\n    previews: [Self({ trigger: Text("Open"), content: Text("Are you sure?") }).previewName("Closed")],\n});\n',
+    "A2UIRow": '// A2UI Basic Catalog \u2192 BindJS: `Row`\n//\n// A2UI props: children (required), justify, align.\n// justify distributes along the main (horizontal) axis; BindJS has no justify\n// modifier, so `center` / `end` / `spaceBetween` are expressed with Spacers.\n\nconst ALIGNMENT = { start: "top", center: "center", end: "bottom", stretch: "center" }\n\nexports.default = defineComponent({\n    metadata: {\n        title: "A2UIRow",\n        description: "A2UI Row primitive \u2014 horizontal container with justify / align distribution.",\n        category: "A2UI",\n    },\n\n    properties: {\n        justify: { type: "enum", options: ["start", "center", "end", "spaceBetween"], defaultValue: "start" },\n        align: { type: "enum", options: ["start", "center", "end", "stretch"], defaultValue: "start" },\n        spacing: { type: "number", defaultValue: 16 },\n    },\n\n    body: (props, children) => {\n        // `weight` lets a child claim proportional space. Only the engine can see each\n        // child node\'s weight, so it passes them down as `childWeights`.\n        const weights = Array.isArray(props.childWeights) ? props.childWeights : []\n\n        const items = (children ?? []).map((child, index) => {\n            const weight = weights[index]\n\n            if (typeof weight !== "number" || weight <= 0) {\n                return child\n            }\n\n            return child.frame({ maxWidth: Infinity }).layoutPriority(weight)\n        })\n        const justify = props.justify ?? "start"\n\n        let laidOut = items\n\n        if (justify === "center") {\n            laidOut = [Spacer(), ...items, Spacer()]\n        } else if (justify === "end") {\n            laidOut = [Spacer(), ...items]\n        } else if (justify === "spaceBetween") {\n            laidOut = items.flatMap((child, index) => (index === 0 ? [child] : [Spacer(), child]))\n        }\n\n        return HStack({ spacing: props.spacing ?? 16, alignment: ALIGNMENT[props.align] || "center" }, laidOut)\n            .frame({ maxWidth: Infinity, alignment: "leading" })\n    },\n\n    previews: [\n        Self({}, [Text("One"), Text("Two")]).previewName("Start"),\n        Self({ justify: "spaceBetween" }, [Text("Left"), Text("Right")]).previewName("Space between"),\n    ],\n});\n',
+    "A2UISlider": '// A2UI Basic Catalog \u2192 BindJS: `Slider`\n//\n// A2UI props: label, value (two-way bound number), min, max, step.\n// BindJS\'s Slider callback is already named `setValue`, which is exactly what the\n// engine injects for a path-bound `value`.\n\n/**\n * A2UI\'s DynamicString resolves to whatever the data model holds, so a binding can arrive\n * as a number or a boolean. Builders that expect a string throw on those, and the throw\n * takes out the whole surface - bindjs-react\'s ErrorBoundary renders an empty div.\n */\nconst asText = (value) => (value === null || value === undefined ? "" : String(value))\n\nexports.default = defineComponent({\n    metadata: {\n        title: "A2UISlider",\n        description: "A2UI Slider primitive \u2014 controlled numeric slider with optional discrete steps.",\n        category: "A2UI",\n    },\n\n    properties: {\n        label: { type: "string", defaultValue: "" },\n        value: { type: "number", defaultValue: 0 },\n        min: { type: "number", defaultValue: 0 },\n        max: { type: "number", defaultValue: 100 },\n        step: { type: "number" },\n    },\n\n    body: (props) => {\n        const lowerBound = props.min ?? 0\n        const upperBound = props.max ?? 100\n        const value = typeof props.value === "number" ? props.value : lowerBound\n        const setValue = typeof props.setValue === "function" ? props.setValue : () => {}\n\n        const slider = Slider({\n            value,\n            setValue,\n            lowerBound,\n            upperBound,\n            step: props.step ?? null,\n            label: asText(asText(props.label)),\n        })\n\n        if (!props.label) {\n            return slider\n        }\n\n        return VStack({ spacing: 4, alignment: "leading" }, [\n            Text(asText(props.label)).font("caption").foregroundStyle(Color("secondary")),\n            slider,\n        ]).frame({ maxWidth: Infinity, alignment: "leading" })\n    },\n\n    previews: [Self({ label: "Budget", value: 40, min: 0, max: 100, step: 5 }).previewName("Stepped")],\n});\n',
+    "A2UITabs": '// A2UI Basic Catalog \u2192 BindJS: `Tabs`\n//\n// A2UI props: tabs (required) \u2014 an array of { title, child }, where `child` is a\n// component id. The engine builds each id and hands this component the array with the\n// built component in place of the id.\n//\n// The v1.0 basic catalog gives Tabs no property for the selected tab, so the selection\n// is renderer state by definition \u2014 there is nowhere in the data model to put it.\n\nexports.default = defineComponent({\n    metadata: {\n        title: "A2UITabs",\n        description: "A2UI Tabs primitive \u2014 a title strip over one visible panel.",\n        category: "A2UI",\n    },\n\n    properties: {},\n\n    body: (props) => {\n        const tabs = Array.isArray(props.tabs) ? props.tabs : []\n        const [selected, setSelected] = useState(0)\n        const active = Math.min(selected, Math.max(tabs.length - 1, 0))\n\n        const strip = tabs.map((tab, index) => {\n            const title = String((tab && tab.title) ?? "Tab " + (index + 1))\n\n            const label = index === active\n                ? Text(title).font("subheadline").fontWeight("semibold").foregroundStyle(Color("accent"))\n                : Text(title).font("subheadline").foregroundStyle(Color("secondary"))\n\n            return Button(label.padding({ horizontal: 12, vertical: 8 }), () => setSelected(index))\n        })\n\n        const panel = tabs.length > 0 && tabs[active] ? tabs[active].child : null\n\n        return VStack({ spacing: 12, alignment: "leading" }, [\n            ScrollView({ axis: "horizontal", showsIndicators: false }, [HStack({ spacing: 4 }, strip)]),\n            Divider(),\n            panel ?? Empty(),\n        ]).frame({ maxWidth: Infinity, alignment: "leading" })\n    },\n\n    previews: [\n        Self({\n            tabs: [\n                { title: "Overview", child: Text("Overview panel") },\n                { title: "Details", child: Text("Details panel") },\n            ],\n        }).previewName("Two tabs"),\n    ],\n});\n',
+    "A2UIText": '// A2UI Basic Catalog \u2192 BindJS: `Text`\n//\n// A2UI props: text (required), variant.\n//\n// Platform note carried over from the first implementation: only the object form\n// `Text({ markdown })` is honoured by bindjs-apple\'s TextComponent (it maps to\n// SwiftUI Text(LocalizedStringKey:)). `Markdown(text)` has no native builder and\n// `Text(string)` renders nothing on iOS \u2014 so the object form is the only safe\n// spelling for a component that must work on every backend.\n//\n// The v1.0 basic catalog only defines ("body" | "caption"), but agents routinely\n// emit h1\u2013h5. Unrecognised variants would silently collapse to body and flatten\n// every heading, so all seven are mapped onto the platform type ramp.\n\nconst HEADING_STYLES = {\n    h1: "title",\n    h2: "title2",\n    h3: "title3",\n    h4: "headline",\n    h5: "subheadline",\n}\n\n/**\n * A2UI\'s DynamicString resolves to whatever the data model holds, so a binding can arrive\n * as a number or a boolean. Builders that expect a string throw on those, and the throw\n * takes out the whole surface - bindjs-react\'s ErrorBoundary renders an empty div.\n */\nconst asText = (value) => (value === null || value === undefined ? "" : String(value))\n\nexports.default = defineComponent({\n    metadata: {\n        title: "A2UIText",\n        description: "A2UI Text primitive \u2014 headings, body or caption, with simple Markdown.",\n        category: "A2UI",\n    },\n\n    properties: {\n        text: { type: "string", required: true, defaultValue: "", inspector: { control: "multiline", markdown: true } },\n        variant: { type: "enum", options: ["h1", "h2", "h3", "h4", "h5", "body", "caption"] },\n    },\n\n    body: (props) => {\n        const text = asText(props.text)\n        const headingStyle = HEADING_STYLES[props.variant]\n\n        // Each branch builds its own Text: hanging two modifier stacks off one shared\n        // instance renders nothing on the web backend.\n        if (headingStyle) {\n            return props.variant === "h5"\n                ? Text({ markdown: text }).font(headingStyle).multilineTextAlignment("leading")\n                : Text({ markdown: text }).font(headingStyle).fontWeight("semibold").multilineTextAlignment("leading")\n        }\n\n        if (props.variant === "caption") {\n            return Text({ markdown: text }).font("caption").foregroundStyle(Color("secondary")).multilineTextAlignment("leading")\n        }\n\n        return Text({ markdown: text }).font("subheadline").multilineTextAlignment("leading")\n    },\n\n    previews: [\n        Self({ text: "Heading one", variant: "h1" }).previewName("h1"),\n        Self({ text: "Heading three", variant: "h3" }).previewName("h3"),\n        Self({ text: "The quick brown fox jumps over the lazy dog." }).previewName("Body"),\n        Self({ text: "Updated 5 minutes ago", variant: "caption" }).previewName("Caption"),\n        Self({ text: "Supports **bold**, _italic_ and [links](https://a2ui.org)." }).previewName("Markdown"),\n    ],\n});\n',
+    "A2UITextField": '// A2UI Basic Catalog \u2192 BindJS: `TextField`\n//\n// A2UI props: label (required), value (two-way bound), placeholder, variant.\n//\n// The data model owns the value. The engine resolves `value` and injects `setValue`,\n// which writes back to the bound JSON Pointer \u2014 so this component is stateless and\n// there is only ever one copy of the truth.\n\n/**\n * A2UI\'s DynamicString resolves to whatever the data model holds, so a binding can arrive\n * as a number or a boolean. Builders that expect a string throw on those, and the throw\n * takes out the whole surface - bindjs-react\'s ErrorBoundary renders an empty div.\n */\nconst asText = (value) => (value === null || value === undefined ? "" : String(value))\n\nexports.default = defineComponent({\n    metadata: {\n        title: "A2UITextField",\n        description: "A2UI TextField primitive \u2014 controlled input over an engine-supplied setValue.",\n        category: "A2UI",\n    },\n\n    properties: {\n        label: { type: "string", required: true, defaultValue: "Label" },\n        value: { type: "string", defaultValue: "" },\n        placeholder: { type: "string", defaultValue: "" },\n        variant: { type: "enum", options: ["shortText", "longText", "number", "obscured"], defaultValue: "shortText" },\n        validationMessage: { type: "string", defaultValue: "" },\n    },\n\n    body: (props) => {\n        const text = props.value === undefined || props.value === null ? "" : String(props.value)\n        const setText = typeof props.setValue === "function" ? props.setValue : () => {}\n        const placeholder = asText(props.placeholder)\n\n        let input\n\n        if (props.variant === "longText") {\n            input = TextEditor({ text, setText }).frame({ minHeight: 96 })\n        } else if (props.variant === "obscured") {\n            input = SecureField({ placeholder, text, setText })\n        } else {\n            input = TextField({ placeholder, text, setText })\n        }\n\n        const field = input.padding(10).background(Color("quaternary")).cornerRadius(8)\n\n        const rows = [\n            Text(asText(props.label)).font("caption").foregroundStyle(Color("secondary")),\n            field,\n        ]\n\n        if (props.validationMessage) {\n            rows.push(Text(asText(props.validationMessage)).font("caption").foregroundStyle(Color("red")))\n        }\n\n        return VStack({ spacing: 4, alignment: "leading" }, rows).frame({ maxWidth: Infinity, alignment: "leading" })\n    },\n\n    previews: [\n        Self({ label: "Full name", value: "Jane Doe", placeholder: "Jane Doe" }).previewName("Short text"),\n        Self({ label: "Notes", variant: "longText", value: "Two scoops." }).previewName("Long text"),\n        Self({ label: "Password", variant: "obscured", value: "hunter2" }).previewName("Obscured"),\n        Self({ label: "Email", value: "nope", validationMessage: "Enter a valid email address" }).previewName("Invalid"),\n    ],\n});\n',
+    "A2UIVideo": '// A2UI Basic Catalog \u2192 BindJS: `Video`\n//\n// A2UI props: url (required), posterUrl, description.\n// `Video` is a registered BindJS built-in; the poster frame is not part of its\n// contract yet, so it is used as the accessibility description instead of dropped.\n\n/**\n * A2UI\'s DynamicString resolves to whatever the data model holds, so a binding can arrive\n * as a number or a boolean. Builders that expect a string throw on those, and the throw\n * takes out the whole surface \u2014 bindjs-react\'s ErrorBoundary renders an empty div.\n */\nconst asText = (value) => (value === null || value === undefined ? \'\' : String(value))\n\nexports.default = defineComponent({\n    metadata: {\n        title: "A2UIVideo",\n        description: "A2UI Video primitive with standard playback controls.",\n        category: "A2UI",\n    },\n\n    properties: {\n        url: { type: "string", required: true, defaultValue: "" },\n        posterUrl: { type: "string", defaultValue: "" },\n        description: { type: "string", defaultValue: "" },\n    },\n\n    body: (props) => {\n        const player = Video({ url: asText(props.url) }).frame({ maxWidth: Infinity, height: 220 }).cornerRadius(8)\n\n        return props.description ? player.accessibilityLabel(asText(props.description)) : player\n    },\n\n    previews: [Self({ url: "https://example.com/clip.mp4" }).previewName("Default")],\n});\n'
+  };
+
+  // src/catalog/register.ts
+  function registerCatalog(runtime, options = {}) {
+    const sources = options.sources ?? BASIC_CATALOG_SOURCES;
+    for (const [name, source] of Object.entries(sources)) {
+      runtime.registerComponent(name, source);
+    }
+    return options.catalog ?? BASIC_CATALOG;
+  }
+
+  // src/protocol/types.ts
+  function isPathBinding(value) {
+    if (!isPlainObject(value)) {
+      return false;
+    }
+    return typeof value.path === "string" && !("call" in value);
+  }
+  function isFunctionCall(value) {
+    if (!isPlainObject(value)) {
+      return false;
+    }
+    return typeof value.call === "string";
+  }
+  var ROOT_COMPONENT_ID = "root";
+  function isChildTemplate(value) {
+    if (!isPlainObject(value)) {
+      return false;
+    }
+    return typeof value.componentId === "string";
+  }
+  var AGENT_MESSAGE_TYPES = [
+    "createSurface",
+    "updateComponents",
+    "updateDataModel",
+    "deleteSurface",
+    "callRendererFunction",
+    "agentFunctionResponse"
+  ];
+  function isPlainObject(value) {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+  }
+
+  // src/store/jsonPointer.ts
+  function isAbsolutePath(path) {
+    return path.startsWith("/");
+  }
+  function parsePointer(path) {
+    if (path === "" || path === "/") {
+      return [];
+    }
+    const body = path.startsWith("/") ? path.slice(1) : path;
+    return body.split("/").map(unescapeToken);
+  }
+  function joinPointer(tokens) {
+    if (tokens.length === 0) {
+      return "/";
+    }
+    return "/" + tokens.map(escapeToken).join("/");
+  }
+  function resolvePath(path, scope = "/") {
+    if (isAbsolutePath(path)) {
+      return joinPointer(parsePointer(path));
+    }
+    if (path === "") {
+      return joinPointer(parsePointer(scope));
+    }
+    return joinPointer([...parsePointer(scope), ...parsePointer(path)]);
+  }
+  function escapeToken(token) {
+    return token.replace(/~/g, "~0").replace(/\//g, "~1");
+  }
+  function unescapeToken(token) {
+    return token.replace(/~1/g, "/").replace(/~0/g, "~");
+  }
+  function getAt(data, path) {
+    let current = data;
+    for (const token of parsePointer(path)) {
+      if (current === null || current === void 0) {
+        return void 0;
+      }
+      if (Array.isArray(current)) {
+        const index2 = Number(token);
+        if (!Number.isInteger(index2)) {
+          return void 0;
+        }
+        current = current[index2];
+        continue;
+      }
+      if (typeof current === "object") {
+        current = current[token];
+        continue;
+      }
+      return void 0;
+    }
+    return current;
+  }
+  function setAt(data, path, value) {
+    const tokens = parsePointer(path);
+    if (tokens.length === 0) {
+      return value;
+    }
+    return setTokens(data, tokens, value);
+  }
+  function setTokens(node, tokens, value) {
+    const [head, ...rest] = tokens;
+    const isIndexToken = /^\d+$/.test(head) || head === "-";
+    const shouldBeArray = Array.isArray(node) || node == null && isIndexToken;
+    if (shouldBeArray) {
+      const array = Array.isArray(node) ? [...node] : [];
+      const index2 = head === "-" ? array.length : Number(head);
+      array[index2] = rest.length > 0 ? setTokens(array[index2], rest, value) : value;
+      return array;
+    }
+    const isObject = node !== null && typeof node === "object" && !Array.isArray(node);
+    const object = isObject ? { ...node } : {};
+    object[head] = rest.length > 0 ? setTokens(object[head], rest, value) : value;
+    return object;
+  }
+  function deleteAt(data, path) {
+    const tokens = parsePointer(path);
+    if (tokens.length === 0) {
+      return {};
+    }
+    return deleteTokens(data, tokens) ?? {};
+  }
+  function deleteTokens(node, tokens) {
+    if (node === null || node === void 0 || typeof node !== "object") {
+      return node;
+    }
+    const [head, ...rest] = tokens;
+    if (Array.isArray(node)) {
+      const index2 = Number(head);
+      const inRange = Number.isInteger(index2) && index2 >= 0 && index2 < node.length;
+      if (!inRange) {
+        return node;
+      }
+      const array = [...node];
+      if (rest.length > 0) {
+        array[index2] = deleteTokens(array[index2], rest);
+      } else {
+        array.splice(index2, 1);
+      }
+      return array;
+    }
+    if (!(head in node)) {
+      return node;
+    }
+    const object = { ...node };
+    if (rest.length > 0) {
+      object[head] = deleteTokens(object[head], rest);
+    } else {
+      delete object[head];
+    }
+    return object;
+  }
+
+  // src/functions/resolve.ts
+  var STRUCTURAL_KEYS = /* @__PURE__ */ new Set(["id", "component", "catalogId", "children", "child", "action"]);
+  function resolvePropsExcept(component, skip, context) {
+    const skipped = new Set(skip);
+    const props = {};
+    for (const [key, value] of Object.entries(component)) {
+      if (STRUCTURAL_KEYS.has(key) || skipped.has(key)) {
+        continue;
+      }
+      const resolved = resolveValue(value, context);
+      if (resolved !== void 0) {
+        props[key] = resolved;
+      }
+    }
+    return props;
+  }
+  function resolveValue(value, context) {
+    if (isPathBinding(value)) {
+      return readPath(value.path, context);
+    }
+    if (isFunctionCall(value)) {
+      return callFunction(value.call, value.args, context);
+    }
+    if (Array.isArray(value)) {
+      return value.map((entry) => resolveValue(entry, context) ?? null);
+    }
+    if (isPlainObject(value)) {
+      return resolveObject(value, context);
+    }
+    return value;
+  }
+  function resolveActionContext(actionContext, context) {
+    if (actionContext === void 0) {
+      return void 0;
+    }
+    return resolveObject(actionContext, context);
+  }
+  function resolveObject(source, context) {
+    const result = {};
+    for (const [key, value] of Object.entries(source)) {
+      const resolved = resolveValue(value, context);
+      if (resolved !== void 0) {
+        result[key] = resolved;
+      }
+    }
+    return result;
+  }
+  function readPath(path, context) {
+    const absolute = resolvePath(path, context.scope ?? "/");
+    const value = getAt(context.dataModel, absolute);
+    context.onRead?.(absolute, value);
+    return value;
+  }
+  function callFunction(name, args, context) {
+    const { registry } = context;
+    try {
+      if (!registry) {
+        throw new Error(`Cannot call '${name}': no function registry was provided.`);
+      }
+      const resolvedArgs = args === void 0 ? {} : resolveObject(args, context);
+      return registry.call(name, resolvedArgs, functionContext(context), context.caller ?? "renderer");
+    } catch (error) {
+      if (!context.onError) {
+        throw error;
+      }
+      context.onError(error, { call: name, args });
+      return void 0;
+    }
+  }
+  function functionContext(context) {
+    return {
+      getValue: (path) => readPath(path, context),
+      scope: context.scope ?? "/",
+      index: context.index,
+      locale: context.locale,
+      timeZone: context.timeZone,
+      openUrl: context.openUrl
+    };
+  }
+
+  // src/engine/types.ts
+  function catalogEntry(value) {
+    if (value === void 0) {
+      return void 0;
+    }
+    return typeof value === "string" ? { component: value } : value;
+  }
+  var DEFAULT_SLOTS = [
+    { prop: "child", kind: "single" },
+    { prop: "children", kind: "list" }
+  ];
+  var DEFAULT_MAX_DEPTH = 50;
+  var DEFAULT_MAX_NODES = 1e4;
+
+  // src/engine/render.ts
+  var KEY_PROP = "__a2uiKey";
+  var _cache, _pending, _options, _signature, _catalog, _catalogs, _registry, _diagnostics, _nodeCount, _reused, _maxDepth, _maxNodes, _RenderSession_instances, keyOf_fn, isValid_fn, harvest_fn, build_fn, catalogFor_fn, buildSlots_fn, buildObjectList_fn, buildChildList_fn, buildTemplate_fn, propsFor_fn, contextFor_fn, dispatch_fn, weightsFor_fn, reuse_fn, placeholder_fn, present_fn, report_fn;
+  var RenderSession = class {
+    constructor() {
+      __privateAdd(this, _RenderSession_instances);
+      __privateAdd(this, _cache, /* @__PURE__ */ new Map());
+      __privateAdd(this, _pending, /* @__PURE__ */ new Map());
+      __privateAdd(this, _options);
+      __privateAdd(this, _signature);
+      __privateAdd(this, _catalog);
+      __privateAdd(this, _catalogs);
+      __privateAdd(this, _registry);
+      __privateAdd(this, _diagnostics, []);
+      __privateAdd(this, _nodeCount, 0);
+      __privateAdd(this, _reused, 0);
+      __privateAdd(this, _maxDepth, DEFAULT_MAX_DEPTH);
+      __privateAdd(this, _maxNodes, DEFAULT_MAX_NODES);
+    }
+    /** Drops every cached subtree. */
+    clear() {
+      __privateGet(this, _cache).clear();
+    }
+    render(options) {
+      __privateSet(this, _options, options);
+      __privateSet(this, _maxDepth, options.maxDepth ?? DEFAULT_MAX_DEPTH);
+      __privateSet(this, _maxNodes, options.maxNodes ?? DEFAULT_MAX_NODES);
+      __privateSet(this, _diagnostics, []);
+      __privateSet(this, _pending, /* @__PURE__ */ new Map());
+      __privateSet(this, _nodeCount, 0);
+      __privateSet(this, _reused, 0);
+      const signature = [options.surface.id, options.locale, options.timeZone].join(" ");
+      const stale = signature !== __privateGet(this, _signature) || options.catalog !== __privateGet(this, _catalog) || options.catalogs !== __privateGet(this, _catalogs) || options.registry !== __privateGet(this, _registry);
+      if (stale) {
+        __privateSet(this, _signature, signature);
+        __privateSet(this, _catalog, options.catalog);
+        __privateSet(this, _catalogs, options.catalogs);
+        __privateSet(this, _registry, options.registry);
+        __privateGet(this, _cache).clear();
+      }
+      const root = options.surface.components.get(ROOT_COMPONENT_ID);
+      if (!root) {
+        __privateMethod(this, _RenderSession_instances, report_fn).call(this, "MISSING_ROOT", `Surface '${options.surface.id}' has no 'root' component.`);
+        return { ast: void 0, diagnostics: __privateGet(this, _diagnostics), nodeCount: 0, reused: 0 };
+      }
+      const built = __privateMethod(this, _RenderSession_instances, build_fn).call(this, ROOT_COMPONENT_ID, "/", void 0, 0, /* @__PURE__ */ new Set());
+      const ast = built === void 0 ? void 0 : __privateGet(this, _options).runtime.unwrapComponentAST(built);
+      __privateMethod(this, _RenderSession_instances, harvest_fn).call(this, ast);
+      return { ast, diagnostics: __privateGet(this, _diagnostics), nodeCount: __privateGet(this, _nodeCount), reused: __privateGet(this, _reused) };
+    }
+  };
+  _cache = new WeakMap();
+  _pending = new WeakMap();
+  _options = new WeakMap();
+  _signature = new WeakMap();
+  _catalog = new WeakMap();
+  _catalogs = new WeakMap();
+  _registry = new WeakMap();
+  _diagnostics = new WeakMap();
+  _nodeCount = new WeakMap();
+  _reused = new WeakMap();
+  _maxDepth = new WeakMap();
+  _maxNodes = new WeakMap();
+  _RenderSession_instances = new WeakSet();
+  // MARK: Cache
+  keyOf_fn = function(id, scope) {
+    return `${scope} ${id}`;
+  };
+  /**
+   * True when a node and everything under it would rebuild to exactly what is cached:
+   * same definition object, same values at every path it read, and valid children.
+   */
+  isValid_fn = function(id, scope, visiting = /* @__PURE__ */ new Set()) {
+    const key = __privateMethod(this, _RenderSession_instances, keyOf_fn).call(this, id, scope);
+    if (visiting.has(key)) {
+      return false;
+    }
+    const entry = __privateGet(this, _cache).get(key);
+    if (!entry || __privateGet(this, _options).surface.components.get(id) !== entry.definition) {
+      return false;
+    }
+    const { dataModel } = __privateGet(this, _options).surface;
+    for (const [path, value] of entry.reads) {
+      if (getAt(dataModel, path) !== value) {
+        return false;
+      }
+    }
+    visiting.add(key);
+    for (const child of entry.children) {
+      if (!__privateMethod(this, _RenderSession_instances, isValid_fn).call(this, child.id, child.scope, visiting)) {
+        visiting.delete(key);
+        return false;
+      }
+    }
+    visiting.delete(key);
+    return true;
+  };
+  /** Indexes the freshly built subtrees out of the unwrapped AST. */
+  harvest_fn = function(ast) {
+    if (__privateGet(this, _pending).size === 0) {
+      return;
+    }
+    const seen = /* @__PURE__ */ new WeakSet();
+    const visit = (node) => {
+      if (node === null || typeof node !== "object") {
+        return;
+      }
+      if (seen.has(node)) {
+        return;
+      }
+      seen.add(node);
+      if (Array.isArray(node)) {
+        node.forEach(visit);
+        return;
+      }
+      if (!isPlainObject(node)) {
+        return;
+      }
+      const call = node;
+      const key = call.type === "ComponentCall" ? call.props?.props?.[KEY_PROP] : void 0;
+      if (typeof key === "string") {
+        const pending = __privateGet(this, _pending).get(key);
+        if (pending) {
+          __privateGet(this, _cache).set(key, { ...pending, ast: node });
+          __privateGet(this, _pending).delete(key);
+        }
+      }
+      for (const value of Object.values(node)) {
+        visit(value);
+      }
+    };
+    visit(ast);
+  };
+  // MARK: Building
+  /**
+   * Builds one component. `scope` is the JSON Pointer of the enclosing template
+   * element; `ancestors` carries the ids on the current path for cycle detection.
+   */
+  build_fn = function(componentId, scope, index2, depth, ancestors) {
+    if (depth > __privateGet(this, _maxDepth)) {
+      __privateMethod(this, _RenderSession_instances, report_fn).call(this, "DEPTH_EXCEEDED", `Maximum depth of ${__privateGet(this, _maxDepth)} exceeded.`, componentId);
+      return void 0;
+    }
+    if (__privateGet(this, _nodeCount) >= __privateGet(this, _maxNodes)) {
+      __privateMethod(this, _RenderSession_instances, report_fn).call(this, "NODE_LIMIT", `Maximum of ${__privateGet(this, _maxNodes)} components exceeded.`, componentId);
+      return void 0;
+    }
+    if (ancestors.has(componentId)) {
+      __privateMethod(this, _RenderSession_instances, report_fn).call(this, "CYCLE", `Component '${componentId}' contains itself.`, componentId);
+      return void 0;
+    }
+    const node = __privateGet(this, _options).surface.components.get(componentId);
+    if (!node) {
+      __privateMethod(this, _RenderSession_instances, report_fn).call(this, "MISSING_COMPONENT", `No component with id '${componentId}'.`, componentId);
+      return void 0;
+    }
+    const catalog = __privateMethod(this, _RenderSession_instances, catalogFor_fn).call(this, node, componentId);
+    if (!catalog) {
+      return void 0;
+    }
+    const entry = catalogEntry(catalog[node.component]);
+    if (!entry) {
+      __privateMethod(this, _RenderSession_instances, report_fn).call(this, "UNKNOWN_COMPONENT", `No catalog entry for component type '${node.component}'.`, componentId);
+      return void 0;
+    }
+    const registry = __privateGet(this, _options).runtime.components;
+    if (registry !== void 0 && registry[entry.component] === void 0) {
+      __privateMethod(this, _RenderSession_instances, report_fn).call(this, "UNREGISTERED_COMPONENT", `Catalog maps '${node.component}' to '${entry.component}', which is not registered on the runtime.`, componentId);
+      return void 0;
+    }
+    const key = __privateMethod(this, _RenderSession_instances, keyOf_fn).call(this, componentId, scope);
+    if (__privateMethod(this, _RenderSession_instances, isValid_fn).call(this, componentId, scope)) {
+      __privateSet(this, _reused, __privateGet(this, _reused) + 1);
+      return __privateMethod(this, _RenderSession_instances, reuse_fn).call(this, __privateGet(this, _cache).get(key).ast);
+    }
+    __privateSet(this, _nodeCount, __privateGet(this, _nodeCount) + 1);
+    const reads = [];
+    const children = [];
+    const context = __privateMethod(this, _RenderSession_instances, contextFor_fn).call(this, scope, index2, componentId, reads);
+    const slotProps = (entry.slots ?? DEFAULT_SLOTS).map((slot) => slot.prop);
+    const props = __privateMethod(this, _RenderSession_instances, propsFor_fn).call(this, node, context, scope, slotProps);
+    const slots = __privateMethod(this, _RenderSession_instances, buildSlots_fn).call(this, node, entry.slots ?? DEFAULT_SLOTS, context, scope, depth, new Set(ancestors).add(componentId), children);
+    Object.assign(props, slots.props);
+    if (slots.weights) {
+      props.childWeights = slots.weights;
+    }
+    if (!entry.stateful) {
+      props[KEY_PROP] = key;
+      __privateGet(this, _pending).set(key, { definition: node, reads, children });
+    }
+    return __privateGet(this, _options).runtime.callComponent(entry.component, props, slots.children, false);
+  };
+  /**
+   * Picks the catalog a node renders through: its own `catalogId`, then the surface's,
+   * then the default. v1.0 resolution is strict — an id we were not given is reported,
+   * never quietly rendered with a different catalog's components.
+   */
+  catalogFor_fn = function(node, componentId) {
+    const requested = node.catalogId ?? __privateGet(this, _options).surface.catalogId;
+    if (requested === void 0) {
+      return __privateGet(this, _options).catalog;
+    }
+    const answersTo = __privateGet(this, _options).defaultCatalogId ?? BASIC_CATALOG_IDS;
+    if (typeof answersTo === "string" ? requested === answersTo : answersTo.includes(requested)) {
+      return __privateGet(this, _options).catalog;
+    }
+    const registered = __privateGet(this, _options).catalogs?.[requested];
+    if (registered) {
+      return registered;
+    }
+    __privateMethod(this, _RenderSession_instances, report_fn).call(this, "UNKNOWN_CATALOG", `Surface asks for catalog '${requested}', which this renderer does not support.`, componentId);
+    return void 0;
+  };
+  /**
+   * Resolves every child-bearing property the catalog declares for this type.
+   * Which properties those are comes from the spec, not a hard-coded pair — `Modal`
+   * uses `trigger` / `content`, `Tabs` nests ids under `tabs[].child`.
+   */
+  buildSlots_fn = function(node, slots, context, scope, depth, ancestors, record) {
+    const result = { children: [], props: {} };
+    for (const slot of slots) {
+      const raw = node[slot.prop];
+      if (raw === void 0) {
+        continue;
+      }
+      const positional = slot.prop === "child" || slot.prop === "children";
+      if (slot.kind === "single") {
+        record.push({ id: raw, scope });
+        const built2 = __privateMethod(this, _RenderSession_instances, build_fn).call(this, raw, scope, void 0, depth + 1, ancestors);
+        if (positional) {
+          result.children.push(built2 ?? __privateMethod(this, _RenderSession_instances, placeholder_fn).call(this));
+        } else if (built2 !== void 0) {
+          result.props[slot.prop] = built2;
+        }
+        continue;
+      }
+      if (slot.kind === "objectList") {
+        result.props[slot.prop] = __privateMethod(this, _RenderSession_instances, buildObjectList_fn).call(this, raw, slot, context, scope, depth, ancestors, record);
+        continue;
+      }
+      const built = __privateMethod(this, _RenderSession_instances, buildChildList_fn).call(this, raw, scope, depth, ancestors, record);
+      if (positional) {
+        result.children.push(...built);
+        result.weights = __privateMethod(this, _RenderSession_instances, weightsFor_fn).call(this, raw, context);
+      } else {
+        result.props[slot.prop] = built;
+      }
+    }
+    return result;
+  };
+  /** An array of objects each carrying a child id, e.g. `Tabs.tabs`. */
+  buildObjectList_fn = function(raw, slot, context, scope, depth, ancestors, record) {
+    if (!Array.isArray(raw)) {
+      return [];
+    }
+    return raw.map((item) => {
+      if (!isPlainObject(item)) {
+        return item;
+      }
+      const resolved = {};
+      for (const [key, value] of Object.entries(item)) {
+        if (key !== slot.childKey) {
+          resolved[key] = resolveValue(value, context);
+          continue;
+        }
+        record.push({ id: value, scope });
+        resolved[key] = __privateMethod(this, _RenderSession_instances, build_fn).call(this, value, scope, void 0, depth + 1, ancestors);
+      }
+      return resolved;
+    });
+  };
+  /**
+   * A static id list, or a lazy `ForEach` over a template.
+   *
+   * A child that fails to build is replaced by a placeholder rather than dropped.
+   * The runtime derives a component's hook path from its index among its siblings, so
+   * removing one shifts every later sibling onto the previous one's stored state —
+   * a dangling reference would silently transplant an open Modal or a typed field.
+   */
+  buildChildList_fn = function(children, scope, depth, ancestors, record) {
+    if (Array.isArray(children)) {
+      return children.map((childId) => {
+        record.push({ id: childId, scope });
+        return __privateMethod(this, _RenderSession_instances, build_fn).call(this, childId, scope, void 0, depth + 1, ancestors) ?? __privateMethod(this, _RenderSession_instances, placeholder_fn).call(this);
+      });
+    }
+    if (isChildTemplate(children)) {
+      return __privateMethod(this, _RenderSession_instances, present_fn).call(this, __privateMethod(this, _RenderSession_instances, buildTemplate_fn).call(this, children.path, children.componentId, scope, depth, ancestors));
+    }
+    return [];
+  };
+  /**
+   * Template children become `ForEach(array, (item, index) => …)`. The callback is
+   * stored by the runtime and invoked per visible row, so nothing is expanded here.
+   *
+   * Rows are not memoised: they are built later, outside this pass. The `ForEach` node
+   * itself is, keyed on the identity of the bound array.
+   */
+  buildTemplate_fn = function(path, templateId, scope, depth, ancestors) {
+    const basePath = resolvePath(path, scope);
+    const array = resolveValue({ path: basePath }, __privateMethod(this, _RenderSession_instances, contextFor_fn).call(this, scope, void 0, templateId));
+    if (!Array.isArray(array)) {
+      __privateMethod(this, _RenderSession_instances, report_fn).call(this, "TEMPLATE_NOT_ARRAY", `Template path '${basePath}' is not an array.`, templateId);
+      return void 0;
+    }
+    const forEach = __privateGet(this, _options).runtime.context.ForEach;
+    return forEach(array, (_item, rowIndex) => {
+      return __privateMethod(this, _RenderSession_instances, build_fn).call(this, templateId, `${basePath}/${rowIndex}`, rowIndex, depth + 1, ancestors);
+    });
+  };
+  // MARK: Props
+  /**
+   * Resolved catalog props, plus the two things only the engine can supply:
+   * an `action` callback, and a `set<Prop>` writer for each path-bound prop.
+   */
+  propsFor_fn = function(node, context, scope, slotProps) {
+    const props = resolvePropsExcept(node, slotProps, context);
+    for (const [key, rawValue] of Object.entries(node)) {
+      if (!isPathBinding(rawValue)) {
+        continue;
+      }
+      const absolutePath = resolvePath(rawValue.path, scope);
+      props[writerName(key)] = (value) => {
+        __privateGet(this, _options).setValue?.(absolutePath, value);
+      };
+    }
+    if (node.action !== void 0) {
+      const index2 = context.index;
+      props.action = () => {
+        __privateMethod(this, _RenderSession_instances, dispatch_fn).call(this, node, __privateMethod(this, _RenderSession_instances, contextFor_fn).call(this, scope, index2, node.id));
+      };
+    }
+    return props;
+  };
+  contextFor_fn = function(scope, index2, componentId, reads) {
+    return {
+      dataModel: __privateGet(this, _options).surface.dataModel,
+      registry: __privateGet(this, _options).registry,
+      scope,
+      index: index2,
+      locale: __privateGet(this, _options).locale,
+      timeZone: __privateGet(this, _options).timeZone,
+      openUrl: __privateGet(this, _options).openUrl,
+      onRead: reads ? (path, value) => reads.push([path, value]) : void 0,
+      onError: (error) => {
+        __privateMethod(this, _RenderSession_instances, report_fn).call(this, "RESOLVE_FAILED", error.message, componentId);
+      }
+    };
+  };
+  // MARK: Actions
+  /** Runs a component's action: a renderer-side function call, an agent event, or both. */
+  dispatch_fn = function(node, context) {
+    const action = node.action;
+    if (!action) {
+      return;
+    }
+    if (action.functionCall) {
+      resolveValue(action.functionCall, context);
+    }
+    const { event } = action;
+    if (!event) {
+      return;
+    }
+    const { surface, onAction } = __privateGet(this, _options);
+    onAction?.({
+      name: event.name,
+      surfaceId: surface.id,
+      sourceComponentId: node.id,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      context: resolveActionContext(event.context, context),
+      // The spec attaches the whole model as transport metadata when asked.
+      dataModel: surface.sendDataModel ? surface.dataModel : void 0
+    });
+  };
+  // MARK: Helpers
+  /** `weight` lets a Row / Column child claim proportional space. */
+  weightsFor_fn = function(raw, context) {
+    if (!Array.isArray(raw)) {
+      return void 0;
+    }
+    let any = false;
+    const weights = raw.map((childId) => {
+      const child = __privateGet(this, _options).surface.components.get(childId);
+      const weight = child === void 0 ? void 0 : resolveValue(child.weight, context);
+      if (typeof weight === "number") {
+        any = true;
+        return weight;
+      }
+      return 0;
+    });
+    return any ? weights : void 0;
+  };
+  /**
+   * Wraps a cached subtree so it looks like any other built component.
+   *
+   * A bare AST object cannot be handed straight to a component: BindJS builders
+   * overload on `typeof arg === 'object'` (`Button(label, action)` reads an object
+   * first argument as `{ action, label }`), so a spliced object is misread. Going back
+   * through `makeComponent` restores the function form and modifier chaining, while
+   * the body still just returns the cached tree — no component is re-invoked.
+   */
+  reuse_fn = function(ast) {
+    return __privateGet(this, _options).runtime.makeComponent(() => ast);
+  };
+  /** Keeps a failed child's slot occupied so sibling hook paths stay put. */
+  placeholder_fn = function() {
+    const empty = __privateGet(this, _options).runtime.context.Empty;
+    return typeof empty === "function" ? empty() : null;
+  };
+  /** Drops a value that failed to build, where position does not matter. */
+  present_fn = function(value) {
+    return value === void 0 ? [] : [value];
+  };
+  report_fn = function(code, message, componentId) {
+    __privateGet(this, _diagnostics).push({ code, message, componentId });
+  };
+  function writerName(propName) {
+    return "set" + propName.charAt(0).toUpperCase() + propName.slice(1);
+  }
+
+  // src/protocol/parse.ts
+  var A2UIProtocolError = class extends Error {
+    constructor(message, options = {}) {
+      super(message);
+      __publicField(this, "code");
+      __publicField(this, "path");
+      __publicField(this, "surfaceId");
+      this.name = "A2UIProtocolError";
+      this.code = options.code ?? "VALIDATION_FAILED";
+      this.path = options.path;
+      this.surfaceId = options.surfaceId;
+    }
+  };
+  var LEGACY_V09_KEYS = ["beginRendering", "surfaceUpdate", "dataModelUpdate"];
+  function messageType(message) {
+    const keys = Object.keys(message).filter((key) => key !== "version");
+    const found = keys.filter((key) => AGENT_MESSAGE_TYPES.includes(key));
+    if (found.length === 1) {
+      return found[0];
+    }
+    if (found.length > 1) {
+      throw new A2UIProtocolError(`Message has multiple type keys: ${found.join(", ")}`, { path: "/" });
+    }
+    const legacy = keys.find((key) => LEGACY_V09_KEYS.includes(key));
+    if (legacy) {
+      throw new A2UIProtocolError(`'${legacy}' is an A2UI v0.9 message; this renderer targets v1.0.`, { path: `/${legacy}` });
+    }
+    throw new A2UIProtocolError(`Message has no recognised type key (expected one of ${AGENT_MESSAGE_TYPES.join(", ")})`, {
+      path: "/"
+    });
+  }
+  function parseMessage(input) {
+    const raw = typeof input === "string" ? parseJson(input) : input;
+    if (!isPlainObject(raw)) {
+      throw new A2UIProtocolError("Message must be a JSON object", { path: "/" });
+    }
+    const message = raw;
+    const type = messageType(message);
+    const body = message[type];
+    if (!isPlainObject(body)) {
+      throw new A2UIProtocolError(`'${type}' must be an object`, { path: `/${type}` });
+    }
+    const surfaceId = validateSurfaceId(type, body);
+    switch (type) {
+      case "createSurface":
+        validateCreateSurface(body, surfaceId);
+        break;
+      case "updateComponents":
+        validateComponents(body.components, "/updateComponents/components", surfaceId);
+        break;
+      case "updateDataModel":
+        validateUpdateDataModel(body, surfaceId);
+        break;
+      case "deleteSurface":
+        break;
+      case "callRendererFunction":
+        validateFunctionCallId(body, type);
+        if (!isPlainObject(body.callFunction) || typeof body.callFunction.call !== "string") {
+          throw new A2UIProtocolError("callFunction.call is required", { path: `/${type}/callFunction` });
+        }
+        break;
+      case "agentFunctionResponse":
+        validateFunctionCallId(body, type);
+        break;
+    }
+    return message;
+  }
+  function parseJson(input) {
+    try {
+      return JSON.parse(input);
+    } catch (error) {
+      throw new A2UIProtocolError(`Invalid JSON: ${error.message}`, { path: "/" });
+    }
+  }
+  function validateSurfaceId(type, body) {
+    const isSurfaceScoped = type !== "agentFunctionResponse" && type !== "callRendererFunction";
+    const surfaceId = body.surfaceId;
+    if (typeof surfaceId === "string" && surfaceId.length > 0) {
+      return surfaceId;
+    }
+    if (isSurfaceScoped) {
+      throw new A2UIProtocolError("surfaceId is required", { path: `/${type}/surfaceId` });
+    }
+    return void 0;
+  }
+  function validateCreateSurface(body, surfaceId) {
+    if (body.components !== void 0) {
+      validateComponents(body.components, "/createSurface/components", surfaceId);
+    }
+    if (body.dataModel !== void 0 && !isPlainObject(body.dataModel)) {
+      throw new A2UIProtocolError("dataModel must be an object", { path: "/createSurface/dataModel", surfaceId });
+    }
+    if (body.catalogId !== void 0 && typeof body.catalogId !== "string") {
+      throw new A2UIProtocolError("catalogId must be a string", { path: "/createSurface/catalogId", surfaceId });
+    }
+  }
+  function validateUpdateDataModel(body, surfaceId) {
+    if (!("value" in body)) {
+      throw new A2UIProtocolError("value is required", { path: "/updateDataModel/value", surfaceId });
+    }
+    if (body.path !== void 0 && typeof body.path !== "string") {
+      throw new A2UIProtocolError("path must be a string", { path: "/updateDataModel/path", surfaceId });
+    }
+  }
+  function validateFunctionCallId(body, type) {
+    if (typeof body.functionCallId !== "string") {
+      throw new A2UIProtocolError("functionCallId is required", { path: `/${type}/functionCallId` });
+    }
+  }
+  function validateComponents(value, basePath, surfaceId) {
+    if (!Array.isArray(value)) {
+      throw new A2UIProtocolError("components must be an array", { path: basePath, surfaceId });
+    }
+    const seen = /* @__PURE__ */ new Set();
+    value.forEach((component, index2) => {
+      const path = `${basePath}/${index2}`;
+      validateComponent(component, path, surfaceId);
+      if (seen.has(component.id)) {
+        throw new A2UIProtocolError(`Duplicate component id '${component.id}' in message`, { path: `${path}/id`, surfaceId });
+      }
+      seen.add(component.id);
+    });
+  }
+  function validateComponent(component, path, surfaceId) {
+    if (!isPlainObject(component)) {
+      throw new A2UIProtocolError("component must be an object", { path, surfaceId });
+    }
+    if (typeof component.id !== "string" || component.id.length === 0) {
+      throw new A2UIProtocolError("component id is required", { path: `${path}/id`, surfaceId });
+    }
+    if (typeof component.component !== "string" || !isIdentifier(component.component)) {
+      throw new A2UIProtocolError(`component type must be an identifier, got ${JSON.stringify(component.component)}`, {
+        path: `${path}/component`,
+        surfaceId
+      });
+    }
+    if (component.component === "Surface") {
+      throw new A2UIProtocolError(`'Surface' is a reserved component name`, { path: `${path}/component`, surfaceId });
+    }
+    if (component.children !== void 0 && !isValidChildList(component.children)) {
+      throw new A2UIProtocolError("children must be an array of ids or {path, componentId}", {
+        path: `${path}/children`,
+        surfaceId
+      });
+    }
+    if (component.child !== void 0 && typeof component.child !== "string") {
+      throw new A2UIProtocolError("child must be a component id", { path: `${path}/child`, surfaceId });
+    }
+  }
+  function isValidChildList(children) {
+    if (Array.isArray(children)) {
+      return children.every((id) => typeof id === "string");
+    }
+    return isChildTemplate(children) && typeof children.path === "string";
+  }
+  function isIdentifier(name) {
+    return /^[\p{L}_][\p{L}\p{N}_]*$/u.test(name);
+  }
+
+  // src/functions/coerce.ts
+  function toDisplayString(value) {
+    if (value === null || value === void 0) {
+      return "";
+    }
+    if (typeof value === "string") {
+      return value;
+    }
+    if (typeof value === "number" || typeof value === "boolean") {
+      return String(value);
+    }
+    return JSON.stringify(value);
+  }
+  function toNumber(value) {
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return value;
+    }
+    if (typeof value === "string" && value.trim() !== "") {
+      const parsed = Number(value);
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    }
+    return void 0;
+  }
+  function toBoolean(value) {
+    if (typeof value === "string") {
+      return value !== "" && value.toLowerCase() !== "false";
+    }
+    return Boolean(value);
+  }
+  function toOperands(args) {
+    if (Array.isArray(args.values)) {
+      return args.values;
+    }
+    if ("value" in args) {
+      return [args.value];
+    }
+    return Object.values(args);
+  }
+  function toLength(value) {
+    if (typeof value === "string" || Array.isArray(value)) {
+      return value.length;
+    }
+    return void 0;
+  }
+
+  // src/functions/standard/format.ts
+  var PLACEHOLDER = /\$\$\{|\$\{([^}]*)\}/g;
+  function interpolate(template, context) {
+    return template.replace(PLACEHOLDER, (match, expression) => {
+      if (expression === void 0) {
+        return "${";
+      }
+      const token = expression.trim();
+      if (token === "@index") {
+        return context.index === void 0 ? "" : String(context.index);
+      }
+      return toDisplayString(context.getValue(token));
+    });
+  }
+  var formatString = {
+    name: "formatString",
+    returnType: "string",
+    description: "Interpolates ${/pointer} placeholders into a template string.",
+    invoke(args, context) {
+      const template = args.value;
+      if (typeof template !== "string") {
+        return toDisplayString(template);
+      }
+      return interpolate(template, context);
+    }
+  };
+  function numberOptions(args) {
+    const options = {};
+    const minimumFractionDigits = toNumber(args.minimumFractionDigits);
+    const maximumFractionDigits = toNumber(args.maximumFractionDigits);
+    if (minimumFractionDigits !== void 0) {
+      options.minimumFractionDigits = minimumFractionDigits;
+    }
+    if (maximumFractionDigits !== void 0) {
+      options.maximumFractionDigits = maximumFractionDigits;
+    }
+    if (typeof args.style === "string") {
+      options.style = args.style;
+    }
+    return options;
+  }
+  var formatNumber = {
+    name: "formatNumber",
+    returnType: "string",
+    description: "Formats a number for the current locale.",
+    invoke(args, context) {
+      const value = toNumber(args.value);
+      if (value === void 0) {
+        return toDisplayString(args.value);
+      }
+      return new Intl.NumberFormat(context.locale, numberOptions(args)).format(value);
+    }
+  };
+  var formatCurrency = {
+    name: "formatCurrency",
+    returnType: "string",
+    description: "Formats a number as a currency amount.",
+    invoke(args, context) {
+      const value = toNumber(args.value);
+      if (value === void 0) {
+        return toDisplayString(args.value);
+      }
+      const currency = typeof args.currency === "string" ? args.currency : "USD";
+      const options = { ...numberOptions(args), style: "currency", currency };
+      return new Intl.NumberFormat(context.locale, options).format(value);
+    }
+  };
+  function dateOptions(args, context) {
+    const options = {};
+    if (typeof args.dateStyle === "string") {
+      options.dateStyle = args.dateStyle;
+    }
+    if (typeof args.timeStyle === "string") {
+      options.timeStyle = args.timeStyle;
+    }
+    if (options.dateStyle === void 0 && options.timeStyle === void 0) {
+      options.dateStyle = "medium";
+    }
+    const timeZone = typeof args.timeZone === "string" ? args.timeZone : context.timeZone;
+    if (timeZone !== void 0) {
+      options.timeZone = timeZone;
+    }
+    return options;
+  }
+  var formatDate = {
+    name: "formatDate",
+    returnType: "string",
+    description: "Formats an ISO date string or epoch milliseconds for the current locale.",
+    invoke(args, context) {
+      const raw = args.value;
+      if (typeof raw !== "string" && typeof raw !== "number") {
+        return toDisplayString(raw);
+      }
+      const date = new Date(raw);
+      if (Number.isNaN(date.getTime())) {
+        return toDisplayString(raw);
+      }
+      return new Intl.DateTimeFormat(context.locale, dateOptions(args, context)).format(date);
+    }
+  };
+  var pluralize = {
+    name: "pluralize",
+    returnType: "string",
+    description: "Picks a plural form (zero/one/two/few/many/other) for a count.",
+    invoke(args, context) {
+      const count = toNumber(args.value ?? args.count) ?? 0;
+      const category = new Intl.PluralRules(context.locale).select(count);
+      const chosen = args[category] ?? args.other;
+      return toDisplayString(chosen);
+    }
+  };
+  var FORMAT_FUNCTIONS = [formatString, formatNumber, formatCurrency, formatDate, pluralize];
+
+  // src/functions/standard/logic.ts
+  var and = {
+    name: "and",
+    returnType: "boolean",
+    description: "True when every operand is truthy.",
+    invoke(args) {
+      return toOperands(args).every(toBoolean);
+    }
+  };
+  var or = {
+    name: "or",
+    returnType: "boolean",
+    description: "True when any operand is truthy.",
+    invoke(args) {
+      return toOperands(args).some(toBoolean);
+    }
+  };
+  var not = {
+    name: "not",
+    returnType: "boolean",
+    description: "Negates its single operand.",
+    invoke(args) {
+      const [operand] = toOperands(args);
+      return !toBoolean(operand);
+    }
+  };
+  var LOGIC_FUNCTIONS = [and, or, not];
+
+  // src/functions/standard/system.ts
+  var index = {
+    name: "@index",
+    returnType: "number",
+    description: "Zero-based index of the current template element.",
+    invoke(_args, context) {
+      return context.index ?? -1;
+    }
+  };
+  var openUrl = {
+    name: "openUrl",
+    allowedCallers: "rendererOnly",
+    returnType: "null",
+    description: "Opens a URL on the renderer. Requires a host `openUrl` hook.",
+    invoke(args, context) {
+      if (typeof args.url !== "string") {
+        return null;
+      }
+      const target = typeof args.target === "string" ? args.target : void 0;
+      context.openUrl?.(args.url, target);
+      return null;
+    }
+  };
+  var SYSTEM_FUNCTIONS = [index, openUrl];
+
+  // src/functions/standard/validation.ts
+  var EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  function pass() {
+    return { valid: true };
+  }
+  function fail(args, fallback) {
+    const message = typeof args.message === "string" ? args.message : fallback;
+    return { valid: false, message };
+  }
+  function isEmpty(value) {
+    if (value === null || value === void 0) {
+      return true;
+    }
+    if (typeof value === "string") {
+      return value.trim() === "";
+    }
+    if (Array.isArray(value)) {
+      return value.length === 0;
+    }
+    return false;
+  }
+  var required = {
+    name: "required",
+    returnType: "validationResult",
+    description: "Fails when the value is null, undefined, blank, or an empty array.",
+    invoke(args) {
+      if (isEmpty(args.value)) {
+        return fail(args, "This field is required.");
+      }
+      return pass();
+    }
+  };
+  var regex = {
+    name: "regex",
+    returnType: "validationResult",
+    description: "Fails when the value does not match the given pattern.",
+    invoke(args) {
+      const pattern = args.pattern;
+      if (typeof pattern !== "string") {
+        return fail(args, "regex requires a string `pattern` argument.");
+      }
+      const flags = typeof args.flags === "string" ? args.flags : void 0;
+      const text = toDisplayString(args.value);
+      try {
+        if (new RegExp(pattern, flags).test(text)) {
+          return pass();
+        }
+      } catch (error) {
+        return fail(args, `Invalid pattern: ${error.message}`);
+      }
+      return fail(args, "This value is not in the expected format.");
+    }
+  };
+  var length = {
+    name: "length",
+    returnType: "validationResult",
+    description: "Checks the length of a string or array against min / max.",
+    invoke(args) {
+      const size = toLength(args.value);
+      if (size === void 0) {
+        return fail(args, "This value has no length.");
+      }
+      const min = toNumber(args.min);
+      const max = toNumber(args.max);
+      if (min !== void 0 && size < min) {
+        return fail(args, `Must be at least ${min} characters.`);
+      }
+      if (max !== void 0 && size > max) {
+        return fail(args, `Must be at most ${max} characters.`);
+      }
+      return pass();
+    }
+  };
+  var numeric = {
+    name: "numeric",
+    returnType: "validationResult",
+    description: "Checks that the value is a number, optionally an integer within min / max.",
+    invoke(args) {
+      const value = toNumber(args.value);
+      if (value === void 0) {
+        return fail(args, "Must be a number.");
+      }
+      if (args.integer === true && !Number.isInteger(value)) {
+        return fail(args, "Must be a whole number.");
+      }
+      const min = toNumber(args.min);
+      const max = toNumber(args.max);
+      if (min !== void 0 && value < min) {
+        return fail(args, `Must be at least ${min}.`);
+      }
+      if (max !== void 0 && value > max) {
+        return fail(args, `Must be at most ${max}.`);
+      }
+      return pass();
+    }
+  };
+  var email = {
+    name: "email",
+    returnType: "validationResult",
+    description: "Checks that the value looks like an email address.",
+    invoke(args) {
+      if (EMAIL_PATTERN.test(toDisplayString(args.value))) {
+        return pass();
+      }
+      return fail(args, "Enter a valid email address.");
+    }
+  };
+  var VALIDATION_FUNCTIONS = [required, regex, length, numeric, email];
+
+  // src/functions/standard/index.ts
+  var STANDARD_FUNCTIONS = [...FORMAT_FUNCTIONS, ...VALIDATION_FUNCTIONS, ...LOGIC_FUNCTIONS, ...SYSTEM_FUNCTIONS];
+
+  // src/functions/registry.ts
+  var _functions;
+  var _FunctionRegistry = class _FunctionRegistry {
+    constructor(functions = []) {
+      __privateAdd(this, _functions, /* @__PURE__ */ new Map());
+      for (const fn of functions) {
+        this.register(fn);
+      }
+    }
+    // MARK: Registration
+    /** Registers (or replaces) a function. Defaults `allowedCallers` to `rendererOrAgent`. */
+    register(fn) {
+      if (!isFunctionName(fn.name)) {
+        throw new A2UIProtocolError(`'${fn.name}' is not a valid function name`, { code: "INVALID_FUNCTION_CALL" });
+      }
+      __privateGet(this, _functions).set(fn.name, { allowedCallers: "rendererOrAgent", ...fn });
+    }
+    unregister(name) {
+      __privateGet(this, _functions).delete(name);
+    }
+    // MARK: Reading
+    get names() {
+      return [...__privateGet(this, _functions).keys()];
+    }
+    has(name) {
+      return __privateGet(this, _functions).has(name);
+    }
+    get(name) {
+      return __privateGet(this, _functions).get(name);
+    }
+    /** Returns a copy with the same functions, for per-surface overrides. */
+    clone() {
+      const copy = new _FunctionRegistry();
+      for (const fn of __privateGet(this, _functions).values()) {
+        copy.register(fn);
+      }
+      return copy;
+    }
+    // MARK: Invocation
+    /** Looks up and invokes a function, enforcing the caller boundary. */
+    call(name, args, context, caller = "renderer") {
+      const fn = __privateGet(this, _functions).get(name);
+      if (!fn) {
+        throw new A2UIProtocolError(`Unknown function '${name}'`, { code: "INVALID_FUNCTION_CALL" });
+      }
+      this.assertCallable(fn, caller);
+      return fn.invoke(args, context);
+    }
+    /** Throws unless `caller` is permitted to invoke `fn`. */
+    assertCallable(fn, caller) {
+      const permitted = fn.allowedCallers === "rendererOrAgent" || fn.allowedCallers === `${caller}Only`;
+      if (permitted) {
+        return;
+      }
+      throw new A2UIProtocolError(`Function '${fn.name}' is ${fn.allowedCallers} and cannot be called by the ${caller}.`, {
+        code: "INVALID_FUNCTION_CALL"
+      });
+    }
+  };
+  _functions = new WeakMap();
+  var FunctionRegistry = _FunctionRegistry;
+  function createStandardRegistry(extra = []) {
+    return new FunctionRegistry([...STANDARD_FUNCTIONS, ...extra]);
+  }
+  function isFunctionName(name) {
+    if (name.startsWith("@")) {
+      return isIdentifier(name.slice(1));
+    }
+    return isIdentifier(name);
+  }
+
+  // src/store/SurfaceStore.ts
+  var _surfaces, _listeners, _options2, _batchDepth, _queued, _SurfaceStore_instances, createSurface_fn, updateComponents_fn, updateDataModel_fn, replace_fn, emit_fn, flush_fn;
+  var SurfaceStore = class {
+    constructor(options = {}) {
+      __privateAdd(this, _SurfaceStore_instances);
+      __privateAdd(this, _surfaces, /* @__PURE__ */ new Map());
+      __privateAdd(this, _listeners, /* @__PURE__ */ new Set());
+      __privateAdd(this, _options2);
+      __privateAdd(this, _batchDepth, 0);
+      __privateAdd(this, _queued, []);
+      __privateSet(this, _options2, options);
+    }
+    // MARK: Reading
+    get surfaceIds() {
+      return [...__privateGet(this, _surfaces).keys()];
+    }
+    getSurface(surfaceId) {
+      return __privateGet(this, _surfaces).get(surfaceId);
+    }
+    requireSurface(surfaceId) {
+      const surface = __privateGet(this, _surfaces).get(surfaceId);
+      if (!surface) {
+        throw new A2UIProtocolError(`Unknown surface '${surfaceId}'`, { surfaceId });
+      }
+      return surface;
+    }
+    getComponent(surfaceId, componentId) {
+      return __privateGet(this, _surfaces).get(surfaceId)?.components.get(componentId);
+    }
+    getRoot(surfaceId) {
+      return this.getComponent(surfaceId, ROOT_COMPONENT_ID);
+    }
+    /** Reads the data model at a pointer, resolving relative paths against `scope`. */
+    getValue(surfaceId, path, scope = "/") {
+      const surface = __privateGet(this, _surfaces).get(surfaceId);
+      if (!surface) {
+        return void 0;
+      }
+      return getAt(surface.dataModel, resolvePath(path, scope));
+    }
+    // MARK: Applying agent messages
+    /** Applies a single agent message (JSON string or object). Validates first; throws `A2UIProtocolError`. */
+    apply(input) {
+      const message = parseMessage(input);
+      const type = messageType(message);
+      switch (type) {
+        case "createSurface":
+          __privateMethod(this, _SurfaceStore_instances, createSurface_fn).call(this, message.createSurface);
+          break;
+        case "updateComponents":
+          __privateMethod(this, _SurfaceStore_instances, updateComponents_fn).call(this, message.updateComponents);
+          break;
+        case "updateDataModel":
+          __privateMethod(this, _SurfaceStore_instances, updateDataModel_fn).call(this, message.updateDataModel);
+          break;
+        case "deleteSurface":
+          this.deleteSurface(message.deleteSurface.surfaceId);
+          break;
+        case "callRendererFunction":
+          __privateMethod(this, _SurfaceStore_instances, emit_fn).call(this, { type: "callRendererFunction", message: message.callRendererFunction });
+          break;
+        case "agentFunctionResponse":
+          __privateMethod(this, _SurfaceStore_instances, emit_fn).call(this, { type: "agentFunctionResponse", message: message.agentFunctionResponse });
+          break;
+      }
+    }
+    /** Applies a batch (e.g. one streamed chunk containing several messages). */
+    applyAll(messages) {
+      this.batch(() => {
+        for (const message of messages) {
+          this.apply(message);
+        }
+      });
+    }
+    /**
+     * Applies several messages, notifying listeners once at the end.
+     *
+     * Without this, a run of messages that supersede each other — two
+     * `updateComponents` for the same id, say — makes a renderer draw every
+     * intermediate state before the final one. On the web React's own batching hides
+     * that when the messages land in the same tick; nothing does on the native hosts,
+     * so a stream reader should wrap each chunk in `batch`.
+     *
+     * Nested calls are fine: only the outermost one flushes.
+     */
+    batch(work) {
+      __privateSet(this, _batchDepth, __privateGet(this, _batchDepth) + 1);
+      try {
+        return work();
+      } finally {
+        __privateSet(this, _batchDepth, __privateGet(this, _batchDepth) - 1);
+        if (__privateGet(this, _batchDepth) === 0) {
+          __privateMethod(this, _SurfaceStore_instances, flush_fn).call(this);
+        }
+      }
+    }
+    // MARK: Local writes
+    /**
+     * Local write from an input component (two-way binding). Relative paths are resolved
+     * against `scope` (the template element scope the component was rendered in).
+     */
+    setValue(surfaceId, path, value, scope = "/") {
+      const surface = this.requireSurface(surfaceId);
+      const absolutePath = resolvePath(path, scope);
+      const dataModel = value === null ? deleteAt(surface.dataModel, absolutePath) : setAt(surface.dataModel, absolutePath, value);
+      __privateMethod(this, _SurfaceStore_instances, replace_fn).call(this, { ...surface, dataModel, version: surface.version + 1 });
+      __privateMethod(this, _SurfaceStore_instances, emit_fn).call(this, { type: "surfaceUpdated", surfaceId });
+    }
+    deleteSurface(surfaceId) {
+      const existed = __privateGet(this, _surfaces).delete(surfaceId);
+      if (!existed) {
+        return;
+      }
+      __privateMethod(this, _SurfaceStore_instances, emit_fn).call(this, { type: "surfaceDeleted", surfaceId });
+    }
+    clear() {
+      for (const surfaceId of this.surfaceIds) {
+        this.deleteSurface(surfaceId);
+      }
+    }
+    // MARK: Subscriptions
+    subscribe(listener) {
+      __privateGet(this, _listeners).add(listener);
+      return () => {
+        __privateGet(this, _listeners).delete(listener);
+      };
+    }
+  };
+  _surfaces = new WeakMap();
+  _listeners = new WeakMap();
+  _options2 = new WeakMap();
+  _batchDepth = new WeakMap();
+  _queued = new WeakMap();
+  _SurfaceStore_instances = new WeakSet();
+  // MARK: Internals
+  createSurface_fn = function(message) {
+    const previous = __privateGet(this, _surfaces).get(message.surfaceId);
+    const components = /* @__PURE__ */ new Map();
+    for (const component of message.components ?? []) {
+      components.set(component.id, component);
+    }
+    __privateMethod(this, _SurfaceStore_instances, replace_fn).call(this, {
+      id: message.surfaceId,
+      catalogId: message.catalogId ?? __privateGet(this, _options2).defaultCatalogId,
+      sendDataModel: message.sendDataModel ?? false,
+      components,
+      dataModel: message.dataModel ?? {},
+      version: (previous?.version ?? 0) + 1
+    });
+    __privateMethod(this, _SurfaceStore_instances, emit_fn).call(this, { type: previous ? "surfaceUpdated" : "surfaceCreated", surfaceId: message.surfaceId });
+  };
+  updateComponents_fn = function(message) {
+    const surface = this.requireSurface(message.surfaceId);
+    const components = new Map(surface.components);
+    for (const component of message.components) {
+      components.set(component.id, component);
+    }
+    __privateMethod(this, _SurfaceStore_instances, replace_fn).call(this, { ...surface, components, version: surface.version + 1 });
+    __privateMethod(this, _SurfaceStore_instances, emit_fn).call(this, { type: "surfaceUpdated", surfaceId: message.surfaceId });
+  };
+  updateDataModel_fn = function(message) {
+    const surface = this.requireSurface(message.surfaceId);
+    const path = message.path ?? "/";
+    const dataModel = message.value === null ? deleteAt(surface.dataModel, path) : setAt(surface.dataModel, path, message.value);
+    __privateMethod(this, _SurfaceStore_instances, replace_fn).call(this, { ...surface, dataModel, version: surface.version + 1 });
+    __privateMethod(this, _SurfaceStore_instances, emit_fn).call(this, { type: "surfaceUpdated", surfaceId: message.surfaceId });
+  };
+  replace_fn = function(surface) {
+    __privateGet(this, _surfaces).set(surface.id, surface);
+  };
+  emit_fn = function(event) {
+    if (__privateGet(this, _batchDepth) > 0) {
+      __privateGet(this, _queued).push(event);
+      return;
+    }
+    for (const listener of __privateGet(this, _listeners)) {
+      listener(event, this);
+    }
+  };
+  /**
+   * Sends the batched events. A surface that changed several times is reported once,
+   * with its last state — created-then-updated stays 'created', and anything followed
+   * by a delete is reported only as deleted. Function-call events are never collapsed;
+   * each one is a distinct request.
+   */
+  flush_fn = function() {
+    const queued = __privateGet(this, _queued);
+    __privateSet(this, _queued, []);
+    const order = [];
+    const bySurface = /* @__PURE__ */ new Map();
+    const events = [];
+    for (const event of queued) {
+      if (!("surfaceId" in event)) {
+        events.push(event);
+        continue;
+      }
+      const previous = bySurface.get(event.surfaceId);
+      if (previous === void 0) {
+        order.push(event.surfaceId);
+      }
+      const keepCreated = previous?.type === "surfaceCreated" && event.type === "surfaceUpdated";
+      bySurface.set(event.surfaceId, keepCreated ? previous : event);
+    }
+    for (const surfaceId of order) {
+      events.push(bySurface.get(surfaceId));
+    }
+    for (const event of events) {
+      for (const listener of __privateGet(this, _listeners)) {
+        listener(event, this);
+      }
+    }
+  };
+
+  // src/validation/validate.ts
+  function validationError(issue) {
+    return {
+      code: "VALIDATION_FAILED",
+      surfaceId: issue.surfaceId,
+      path: issue.path,
+      message: issue.message
+    };
+  }
+  var DEFAULT_MAX_DEPTH2 = 50;
+  var DEFAULT_MAX_FUNCTION_CALL_DEPTH = 5;
+  var ROOT_ID = "root";
+  function validateSurface(surfaceId, components, dataModel, options = {}) {
+    const maxDepth = options.maxDepth ?? DEFAULT_MAX_DEPTH2;
+    const catalog = options.catalog ?? BASIC_CATALOG;
+    const complete = options.complete ?? true;
+    const issues = [];
+    const indexOf = options.indexOf ?? new Map([...components.keys()].map((id, index2) => [id, index2]));
+    const pointerFor = (componentId, field) => {
+      if (componentId === void 0) {
+        return "/components";
+      }
+      const index2 = indexOf.get(componentId);
+      const base = index2 === void 0 ? "/components" : `/components/${index2}`;
+      return field ? `${base}/${field}` : base;
+    };
+    const report = (code, message, componentId, field) => {
+      issues.push({ code, message, surfaceId, path: pointerFor(componentId, field), componentId });
+    };
+    if (complete && components.size > 0 && !components.has(ROOT_ID)) {
+      report("MISSING_ROOT", `Missing root component in surface '${surfaceId}'.`);
+    }
+    checkReferences(components, catalog, report);
+    checkPathsAndCalls(components, options.maxFunctionCallDepth ?? DEFAULT_MAX_FUNCTION_CALL_DEPTH, report);
+    const reached = walk(components, catalog, maxDepth, report);
+    for (const id of components.keys()) {
+      const superseded = options.everReferenced?.has(id) ?? false;
+      if (complete && !reached.has(id) && !superseded && id !== ROOT_ID && components.has(ROOT_ID)) {
+        report("UNREACHABLE", `Component '${id}' is not reachable from '${ROOT_ID}'.`, id);
+      }
+    }
+    if (depthOf(dataModel) > maxDepth) {
+      report("DEPTH_EXCEEDED", `Data model in surface '${surfaceId}' nests deeper than ${maxDepth} levels.`);
+    }
+    return issues;
+  }
+  function childRefsOf(component, catalog) {
+    const entry = catalog[component.component];
+    const slots = entry?.slots;
+    const effective = slots?.length ? slots : [
+      { prop: "child", kind: "single" },
+      { prop: "children", kind: "list" }
+    ];
+    const refs = [];
+    const source = component;
+    for (const slot of effective) {
+      const value = source[slot.prop];
+      if (value === void 0 || value === null) {
+        continue;
+      }
+      if (slot.kind === "single") {
+        if (typeof value === "string") {
+          refs.push({ id: value, field: slot.prop });
+        }
+        continue;
+      }
+      if (isChildTemplate(value)) {
+        refs.push({ id: value.componentId, field: `${slot.prop}/componentId` });
+        continue;
+      }
+      if (Array.isArray(value)) {
+        value.forEach((entryValue, index2) => {
+          if (typeof entryValue === "string") {
+            refs.push({ id: entryValue, field: `${slot.prop}/${index2}` });
+            return;
+          }
+          if (slot.kind === "objectList" && isPlainObject(entryValue)) {
+            const child = entryValue[slot.childKey];
+            if (typeof child === "string") {
+              refs.push({ id: child, field: `${slot.prop}/${index2}/${slot.childKey}` });
+            }
+          }
+        });
+      }
+    }
+    return refs;
+  }
+  function childIdsOf(component, catalog) {
+    return childRefsOf(component, catalog).map((ref) => ref.id);
+  }
+  function checkReferences(components, catalog, report) {
+    for (const [id, component] of components) {
+      for (const { id: childId, field } of childRefsOf(component, catalog)) {
+        if (childId === id) {
+          report("SELF_REFERENCE", `Self-reference detected: component '${id}' contains itself.`, id, field);
+          continue;
+        }
+        if (!components.has(childId)) {
+          report("DANGLING_REFERENCE", `Component '${id}' references non-existent component '${childId}'.`, id, field);
+        }
+      }
+    }
+  }
+  function walk(components, catalog, maxDepth, report) {
+    const reached = /* @__PURE__ */ new Set();
+    const reportedCycles = /* @__PURE__ */ new Set();
+    let reportedDepth = false;
+    const visit = (id, stack, depth, collect) => {
+      const component = components.get(id);
+      if (!component) {
+        return;
+      }
+      if (stack.has(id)) {
+        if (!reportedCycles.has(id)) {
+          reportedCycles.add(id);
+          report("CYCLE", `Circular reference detected at component '${id}'.`, id);
+        }
+        return;
+      }
+      if (depth > maxDepth) {
+        if (!reportedDepth) {
+          reportedDepth = true;
+          report("DEPTH_EXCEEDED", `Component graph nests deeper than ${maxDepth} levels.`, id);
+        }
+        return;
+      }
+      if (collect) {
+        reached.add(id);
+      }
+      stack.add(id);
+      for (const childId of childIdsOf(component, catalog)) {
+        visit(childId, stack, depth + 1, collect);
+      }
+      stack.delete(id);
+    };
+    if (components.has(ROOT_ID)) {
+      visit(ROOT_ID, /* @__PURE__ */ new Set(), 1, true);
+    }
+    for (const id of components.keys()) {
+      if (!reached.has(id)) {
+        visit(id, /* @__PURE__ */ new Set(), 1, false);
+      }
+    }
+    return reached;
+  }
+  function checkPathsAndCalls(components, maxFunctionCallDepth, report) {
+    for (const [id, component] of components) {
+      inspect(component, 0);
+    }
+    function inspect(value, callDepth, componentId) {
+      if (Array.isArray(value)) {
+        for (const entry of value) {
+          inspect(entry, callDepth, componentId);
+        }
+        return;
+      }
+      if (!isPlainObject(value)) {
+        return;
+      }
+      if (isPathBinding(value)) {
+        if (!isValidPointer(value.path)) {
+          report("INVALID_PATH", `Invalid path syntax: '${value.path}'.`, componentId);
+        }
+        return;
+      }
+      const call = isFunctionCall(value) ? value : isPlainObject(value.functionCall) ? value.functionCall : void 0;
+      if (call) {
+        const depth = callDepth + 1;
+        if (depth > maxFunctionCallDepth) {
+          report(
+            "FUNCTION_DEPTH_EXCEEDED",
+            `Recursion limit exceeded: function calls nest deeper than ${maxFunctionCallDepth}.`,
+            componentId
+          );
+          return;
+        }
+        inspect(call.args, depth, componentId);
+        return;
+      }
+      for (const entry of Object.values(value)) {
+        inspect(entry, callDepth, componentId);
+      }
+    }
+  }
+  function isValidPointer(path) {
+    if (typeof path !== "string") {
+      return false;
+    }
+    for (let index2 = 0; index2 < path.length; index2 += 1) {
+      if (path[index2] !== "~") {
+        continue;
+      }
+      const next = path[index2 + 1];
+      if (next !== "0" && next !== "1") {
+        return false;
+      }
+    }
+    return true;
+  }
+  function depthOf(value, seen = 0) {
+    if (seen > DEFAULT_MAX_DEPTH2 * 2 || value === null || typeof value !== "object") {
+      return seen;
+    }
+    let deepest = seen + 1;
+    for (const entry of Object.values(value)) {
+      deepest = Math.max(deepest, depthOf(entry, seen + 1));
+    }
+    return deepest;
+  }
+
+  // src/native/bridge.ts
+  var _store, _sessions, _actions, _errors, _runtime, _catalog2, _registry2, _options3, _onActions, _A2UINativeBridge_instances, validateAll_fn, sessionFor_fn, require_fn;
+  var A2UINativeBridge = class {
+    constructor() {
+      __privateAdd(this, _A2UINativeBridge_instances);
+      __privateAdd(this, _store, new SurfaceStore());
+      __privateAdd(this, _sessions, /* @__PURE__ */ new Map());
+      __privateAdd(this, _actions, []);
+      __privateAdd(this, _errors, []);
+      __privateAdd(this, _runtime);
+      __privateAdd(this, _catalog2, BASIC_CATALOG);
+      __privateAdd(this, _registry2, createStandardRegistry());
+      __privateAdd(this, _options3, {});
+      __privateAdd(this, _onActions);
+    }
+    /** Attaches to the host's runtime and registers the catalog on it. */
+    attach(runtime, options = {}) {
+      __privateSet(this, _runtime, runtime);
+      __privateSet(this, _options3, options);
+      registerCatalog(runtime);
+    }
+    /**
+     * Registers a callback fired whenever a surface changes.
+     *
+     * This is the signal a host redraws on, and without it nothing does. A control writing
+     * back into the data model does not touch BindJS hook state — the model owns the value,
+     * which is the whole point — so the runtime never marks itself dirty and the host has
+     * no other way to learn that the tree it drew is now stale.
+     *
+     * `useA2UIStore` is the web equivalent, via `useSyncExternalStore`.
+     */
+    onChange(callback) {
+      return __privateGet(this, _store).subscribe((event) => {
+        const surfaceId = "surfaceId" in event ? event.surfaceId : "";
+        callback(surfaceId, event.type);
+      });
+    }
+    /**
+     * Registers a callback fired whenever an action is queued.
+     *
+     * A tap does not always change the data model, so a host cannot rely on its own
+     * redraw to notice one. This lets the host drain the queue on the tap itself rather
+     * than polling for something that may never come.
+     */
+    onActions(callback) {
+      __privateSet(this, _onActions, callback);
+    }
+    configure(options) {
+      __privateSet(this, _options3, { ...__privateGet(this, _options3), ...options });
+    }
+    /** Registers extra BindJS sources and points catalog entries at them. */
+    useCatalog(sources, catalog) {
+      const runtime = __privateMethod(this, _A2UINativeBridge_instances, require_fn).call(this);
+      registerCatalog(runtime, { sources });
+      if (catalog) {
+        __privateSet(this, _catalog2, catalog);
+        __privateGet(this, _sessions).clear();
+      }
+    }
+    /** Applies agent messages. Accepts one message, an array, or a JSON string of either. */
+    applyMessages(input) {
+      const parsed = typeof input === "string" ? JSON.parse(input) : input;
+      const messages = Array.isArray(parsed) ? parsed : [parsed];
+      const errors = [];
+      let applied = 0;
+      __privateGet(this, _store).batch(() => {
+        for (const message of messages) {
+          try {
+            __privateGet(this, _store).apply(message);
+            applied += 1;
+          } catch (error) {
+            errors.push(error.message);
+          }
+        }
+      });
+      if (__privateGet(this, _options3).validate) {
+        __privateMethod(this, _A2UINativeBridge_instances, validateAll_fn).call(this);
+      }
+      return { applied, errors };
+    }
+    /** Everything validation reported since the last call. Clears the queue. */
+    takeErrors() {
+      const errors = __privateGet(this, _errors);
+      __privateSet(this, _errors, []);
+      return errors;
+    }
+    takeErrorsJSON() {
+      return JSON.stringify(this.takeErrors());
+    }
+    surfaceIds() {
+      return __privateGet(this, _store).surfaceIds;
+    }
+    /** Builds the AST for one surface. Returns `null` when there is no such surface. */
+    render(surfaceId) {
+      const runtime = __privateMethod(this, _A2UINativeBridge_instances, require_fn).call(this);
+      const id = surfaceId ?? __privateGet(this, _store).surfaceIds[0];
+      const surface = id === void 0 ? void 0 : __privateGet(this, _store).getSurface(id);
+      if (!surface) {
+        return null;
+      }
+      const result = __privateMethod(this, _A2UINativeBridge_instances, sessionFor_fn).call(this, surface.id).render({
+        runtime,
+        surface,
+        catalog: __privateGet(this, _catalog2),
+        registry: __privateGet(this, _registry2),
+        locale: __privateGet(this, _options3).locale,
+        timeZone: __privateGet(this, _options3).timeZone,
+        setValue: (path, value) => __privateGet(this, _store).setValue(surface.id, path, value),
+        onAction: (action) => {
+          var _a;
+          __privateGet(this, _actions).push(action);
+          (_a = __privateGet(this, _onActions)) == null ? void 0 : _a.call(this);
+        }
+      });
+      return { ast: result.ast ?? null, diagnostics: result.diagnostics };
+    }
+    /** `render`, serialised — the form a JavaScriptCore host can read directly. */
+    renderJSON(surfaceId) {
+      return JSON.stringify(this.render(surfaceId));
+    }
+    /** Writes into the data model, as a two-way bound control would. */
+    setValue(surfaceId, path, value) {
+      __privateGet(this, _store).setValue(surfaceId, path, value);
+    }
+    /** Everything the surface dispatched since the last call. Clears the queue. */
+    takeActions() {
+      const actions = __privateGet(this, _actions);
+      __privateSet(this, _actions, []);
+      return actions;
+    }
+    takeActionsJSON() {
+      return JSON.stringify(this.takeActions());
+    }
+    /** Version counter for a surface, so a host can skip redrawing an unchanged one. */
+    versionOf(surfaceId) {
+      return __privateGet(this, _store).getSurface(surfaceId)?.version ?? 0;
+    }
+    reset() {
+      __privateGet(this, _store).clear();
+      __privateGet(this, _sessions).clear();
+      __privateSet(this, _actions, []);
+      __privateSet(this, _errors, []);
+    }
+  };
+  _store = new WeakMap();
+  _sessions = new WeakMap();
+  _actions = new WeakMap();
+  _errors = new WeakMap();
+  _runtime = new WeakMap();
+  _catalog2 = new WeakMap();
+  _registry2 = new WeakMap();
+  _options3 = new WeakMap();
+  _onActions = new WeakMap();
+  _A2UINativeBridge_instances = new WeakSet();
+  validateAll_fn = function() {
+    for (const surfaceId of __privateGet(this, _store).surfaceIds) {
+      const surface = __privateGet(this, _store).getSurface(surfaceId);
+      if (!surface) {
+        continue;
+      }
+      for (const issue of validateSurface(surfaceId, surface.components, surface.dataModel, {
+        catalog: __privateGet(this, _catalog2)
+      })) {
+        __privateGet(this, _errors).push(validationError(issue));
+      }
+    }
+  };
+  /** One session per surface, so subtrees are reused across redraws. */
+  sessionFor_fn = function(surfaceId) {
+    let session = __privateGet(this, _sessions).get(surfaceId);
+    if (!session) {
+      session = new RenderSession();
+      __privateGet(this, _sessions).set(surfaceId, session);
+    }
+    return session;
+  };
+  require_fn = function() {
+    if (!__privateGet(this, _runtime)) {
+      throw new Error("a2ui: call attach(runtime) with the host runtime before rendering");
+    }
+    return __privateGet(this, _runtime);
+  };
+
+  // src/native/global.ts
+  var bridge = new A2UINativeBridge();
+  globalThis.a2ui = bridge;
+  return __toCommonJS(global_exports);
+})();

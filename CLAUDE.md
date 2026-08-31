@@ -1,0 +1,210 @@
+# CLAUDE.md
+
+Guidance for AI agents contributing to this repo.
+
+## What this is
+
+An A2UI (Agent-to-UI protocol) renderer built on BindJS. The top level splits by platform:
+`vendor/spec/` (the protocol, vendored verbatim), `core/` (`@metabindai/a2ui-bindjs` — protocol,
+store, functions, engine, catalog), `react/` (`@metabindai/a2ui-bindjs-react`), `ios/` (Swift), `android/` (coming soon), plus `examples/`. The metabind example calls the Metabind API directly from
+`src/metabindApi.ts` — one query and one header did not justify a client library. The
+prototype SDK that used to live here now sits beside the repo at `../metabind-sdk`,
+undeployed; its `TODO.md` says what would have to happen first. It consumes the published `@metabindai/bindjs-runtime` and `@metabindai/bindjs-react` packages (sibling repo `../bindjs`); it does not modify them.
+
+## Commands
+
+```sh
+pnpm install
+pnpm build
+pnpm test
+```
+
+## Protocol versions
+
+Both v1.0 and v0.9 render. They declare the same components and functions — v1.0 only adds
+properties — so the bundled catalog answers to both catalog ids. Pre-0.9.1 message names
+(`beginRendering`, `surfaceUpdate`, `dataModelUpdate`) are still rejected: that is a
+different vocabulary, not a version flag.
+
+## The spec is the source of truth
+
+`vendor/spec/v1_0/` is a verbatim copy of the A2UI v1.0 schemas and examples — never edit it.
+`pnpm build` regenerates `src/engine/basicCatalog.generated.ts` from it, and
+`tests/conformance.test.ts` runs all 43 example surfaces through the engine.
+
+When adding or changing a catalog component, read its definition in
+`vendor/spec/v1_0/catalogs/basic/catalog.json` first. Guessing a component's shape is how Tabs
+(`tabs: [{title, child}]`, not `children` + labels) and Modal (`trigger` / `content`, not
+positional children) were shipped broken — and because the engine simply ignores child
+ids in properties it does not know about, neither produced a diagnostic.
+
+## Conformance
+
+Two suites, both run by `pnpm test`:
+
+- `core/tests/conformance.test.ts` — the 43 official spec examples, each validated against
+  the schemas and rendered through the catalog.
+- `core/tests/conformance.suite.test.ts` — the official language-agnostic YAML suite,
+  vendored in `vendor/conformance/`. Cases we do not satisfy are named in `KNOWN_GAPS` and run
+  under `it.fails`, so they are counted rather than hidden; closing one turns the suite red
+  until its entry is removed. `vendor/conformance/README.md` explains the current standing.
+
+`core/src/validation/` answers the structural question — dangling ids, self-reference,
+cycles, reachability, malformed paths, depth — and is deliberately **not** part of
+rendering. The engine degrades (an unresolvable child becomes a diagnostic and the rest of
+the surface draws), which is what you want mid-stream; a host that would rather reject a
+payload up front calls `validateMessages` instead. Two rules are easy to get wrong and are
+covered by tests: a path may be **relative** inside a child template, and a component that
+was referenced and later **replaced** is superseded, not orphaned.
+
+Both renderers can report failures to the agent as A2UI `error` messages —
+`<A2UIRenderer validate onError={…} />` on the web, `A2UINativeBridge` with
+`{ validate: true }` plus `takeErrors()` natively. **Off by default, deliberately:** a
+surface being streamed is legitimately incomplete part-way through — the official
+`00_incremental` example has a dangling reference at message three of six that the fourth
+resolves — so validating on every message would send the agent errors that are not true
+yet. Turn it on where whole payloads arrive, or validate once the stream settles.
+
+Neither `vendor/spec/` nor `vendor/conformance/` is ever edited — they are verbatim upstream copies.
+
+## Catalog components
+
+Run `pnpm validate:catalog` after editing one. It runs the Metabind CLI's structural
+validator over every prebundled component and catches what neither TypeScript nor the
+tests can see — a layout's props-form requiring a literal `Component[]`, for instance,
+which is valid JavaScript, renders fine here, and is rejected on push. It skips cleanly
+when the CLI is not installed.
+
+`src/catalog/basic/*.js` are real BindJS sources, edited on disk. `pnpm build:catalog`
+(also run by `build` and `test`) inlines them into `src/catalog/basic/sources.generated.ts`
+— generated, gitignored, never edited by hand.
+
+Authoring rules:
+
+- Prefer a **named control over a hand-drawn one** where BindJS has it. `ChoicePicker`
+  builds single selection from `Picker` + `.pickerStyle`, so it arrives as a real
+  `UISegmentedControl` on iOS and a `<select>` on the web, instead of styled `Button`s that
+  look native on neither. It also produced a 27% smaller AST for the same surface.
+- Props carry their **A2UI names**. The engine passes them through; it makes no
+  presentation decisions, so anything about spacing, fonts or colour belongs here.
+- The engine injects exactly two things: `action` (a function) on nodes with an A2UI
+  action, and `set<Prop>` for each path-bound prop (`value` → `setValue`).
+- **A component that calls `useState` must be listed in `STATEFUL_TYPES`** in
+  `src/engine/catalog.ts`. The engine memoises subtrees, and a stateful component whose
+  output can change without its A2UI inputs changing would be frozen in whatever state it
+  was last built with. This list is hand-maintained — it is the one place the catalog is
+  not generated from the spec.
+- Components are stateless wherever the data model can own the value. Local `useState`
+  is only for state A2UI has nowhere to put (`Modal.open`, `Tabs.selectedIndex` when
+  unbound) — and those read `set<Prop>` first so a bound path still wins.
+- `properties.defaultValue` is inspector metadata and is NOT applied at runtime. Apply
+  defaults in the body, and beware boolean props: `!undefined` is `true`.
+- Build each branch its own component instance; hanging two modifier stacks off one
+  shared instance renders nothing on the web backend.
+- **Only use colour names BindJS knows**: `clear`, `red`, `orange`, `yellow`, `green`,
+  `mint`, `teal`, `cyan`, `blue`, `indigo`, `purple`, `pink`, `brown`, `black`, `white`,
+  `gray`, `primary`, `secondary`, `tertiary`, `quaternary`, `accent`, `background`, or a
+  `#hex`. UIKit-style names like `secondarySystemBackground` or `label` are **not**
+  valid — they do not throw, they simply produce no colour, so a control silently stops
+  reflecting its own state. `tests/colors.test.ts` checks every catalog source.
+
+## Rules
+
+- `core/` must stay framework-agnostic and free of React imports. React lives in its own
+  package, `react/`, which consumes core as a published dependency — so anything core
+  needs to expose to it has to be exported from `core/src/index.ts`, not reached into.
+- Applying a run of messages? Use `store.applyAll` or wrap them in `store.batch(fn)`, so
+  listeners are notified once with the final shape instead of drawing every intermediate
+  state. React hides this on the web by batching; the native hosts do not.
+- The A2UI → BindJS translation should only emit components/modifiers that exist in the BindJS registry so surfaces stay portable to the native renderers.
+- Do not start dev servers from an agent session; ask the user to run them.
+- A green `build` does not mean the dev server works: Rollup resolves CommonJS at build
+  time, Vite's dev server relies on the dep optimizer. `pnpm --filter @metabindai/a2ui-bindjs-playground test`
+  mounts the real App in jsdom and catches that gap. The playground is
+  `pnpm --filter @metabindai/a2ui-bindjs-playground dev` on `:5181`; it reads `core/dist` and `react/dist`, so
+  `pnpm build` after library changes.
+
+## The native example
+
+`examples/ios/minimal` is a SwiftUI app drawing an agent-authored surface. It depends on two packages under `ios/`:
+
+- `ios/packages/a2ui-bindjs-apple` — what would ship: `A2UIHost`, `A2UISurfaceView`, and the
+  renderer bundle as a resource. Nothing in it knows about the example.
+- `ios/vendor/bindjs-apple` — a checked-in copy carrying four additive `BindJSContext` methods
+  (`evaluate`, `setGlobal`, `willRender`, `viewForAST`) that are not upstream yet.
+  `ios/vendor/bindjs-apple.patch` is the whole divergence.
+
+Both go away together: upstream the four methods, then the Apple package takes a repo and a
+version instead of a path.
+
+`pnpm sync:native` rebuilds `a2ui-native.js` into the
+Apple package's resources. It does **not** copy `BindJSRuntime.js`: the host already ships one, and
+there must only be one — a `handlerId` resolves against the instance that stored it, and
+hook state is keyed by path within that instance. `swift run A2UIMinimal --check` runs the
+bridge headlessly, which distinguishes a broken bundle from a broken layout.
+
+**A native host must subscribe to the store.** Nothing else will make it redraw: a
+control writing back into the data model does not touch BindJS hook state — the model owns
+the value — so the runtime never marks itself dirty and `BindJSContext` publishes nothing.
+`a2ui.onChange(cb)` is the native equivalent of `useA2UIStore`'s `useSyncExternalStore`.
+Without it the store updates correctly and the screen keeps showing the tree it drew first.
+`swift run A2UIMinimal --check` step 12 asserts the whole chain.
+
+`examples/ios/minimal/A2UIMinimal.xcodeproj` is generated from `project.yml` by `xcodegen` and
+checked in, so the example opens and runs without tooling; `a2ui-native.js` is committed
+for the same reason. `swift run` builds the same sources as a macOS window.
+
+One catalog component does not survive the trip: `Slider` has no native BindJS view. On
+macOS only, `Button` picks up platform button chrome, because there is no `buttonStyle`
+modifier — iOS draws it as intended.
+
+## Overriding a catalog component
+
+Two ways, and the short one is now the default answer. Pass `sources` (component name →
+BindJS source) and a `catalog` pointing at it, and `<A2UIRenderer>` registers them on the
+runtime it already owns — no `BindJSRuntime` to construct. Registration happens in a
+`useMemo` during render, not an effect, so the first paint already has them, and it is
+guarded by content rather than object identity so an inline literal does not re-register
+every render and throw away memoised subtrees.
+
+Pass a `runtime` instead only when you have other BindJS components to register, or several
+renderers that should share hook state. `examples/web/custom-catalog` shows the short way;
+`react/src/runtime.ts` still exports `createA2UIRuntime` for the long one.
+
+## Rendering defaults
+
+`<A2UIRenderer>` sets `colorScheme: 'light'` unless the host passes one. Left unset,
+bindjs-react follows the viewer's _system_ preference, so an embedded surface would flip
+to dark inside a host that is not — a surprise the host cannot see coming. Pass
+`environment={{ colorScheme: undefined }}` to opt back into following the system.
+
+### Host style reset
+
+`<A2UIRenderer>` wraps its output in `.a2ui-surface` and injects a stylesheet once that
+zeroes the browser's default margins on the HTML the renderer emits (`p`, headings, lists,
+`pre`, `blockquote`). Without it a `<p>` from a Text adds ~32px between rows on top of
+whatever the catalog set.
+
+It is scoped to `.a2ui-surface` — a class this package owns — deliberately, **not** to
+bindjs-react's `.rendererContainer`: styling another package's DOM would leak into every
+renderer on the page. `resetHostStyles={false}` turns it off.
+
+## Keep the core dependency-free
+
+`core/src/` must not import anything external at all. The package ships a
+single-file bundle for the native hosts (`pnpm build:bundle`), and the build fails if a
+`node_modules` input appears or the output references `require` / `process` / `Buffer` /
+`node:`. `@metabindai/bindjs-runtime` and `bindjs-react` are peer dependencies, not
+dependencies — the host supplies the runtime, and the engine only talks to it through the
+structural `BindJSRuntimeLike` interface.
+
+## Code style — optimise for readability
+
+Prettier (`pnpm format`) handles the mechanical part: 4-space indent, no semicolons, single quotes. On top of that:
+
+- Every `if` / `else` / loop gets braces and its own lines. Never `if (x) return y` on one line.
+- Blank line between logical steps inside a function, after guard clauses, and before `return`.
+- Prefer several small named functions over one dense one; name the condition (`const inRange = …`) instead of inlining it.
+- No nested ternaries. A single ternary is fine for a simple value pick.
+- Group each file into sections with `// MARK: - Section` headers.
+- Descriptive names over abbreviations (`surface`, `component`, `index` — not `s`, `c`, `i`).

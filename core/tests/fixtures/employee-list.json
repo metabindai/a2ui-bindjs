@@ -1,0 +1,17 @@
+[
+    {
+        "version": "v1.0",
+        "createSurface": {
+            "surfaceId": "employees",
+            "components": [
+                { "id": "root", "component": "List", "children": { "path": "/employees", "componentId": "employee_card_template" } },
+                { "id": "employee_card_template", "component": "Column", "children": ["name_text", "company_text"] },
+                { "id": "name_text", "component": "Text", "text": { "path": "name" } },
+                { "id": "company_text", "component": "Text", "text": { "path": "/company" } }
+            ],
+            "dataModel": { "company": "Acme", "employees": [{ "name": "Ada" }, { "name": "Grace" }] }
+        }
+    },
+    { "version": "v1.0", "updateDataModel": { "surfaceId": "employees", "path": "/employees/-", "value": { "name": "Linus" } } },
+    { "version": "v1.0", "updateDataModel": { "surfaceId": "employees", "path": "/employees/0", "value": null } }
+]

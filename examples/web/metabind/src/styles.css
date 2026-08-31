@@ -1,0 +1,45 @@
+:root {
+    font: 14px system-ui, sans-serif;
+    color: #111;
+}
+
+body {
+    margin: 0;
+}
+
+.app {
+    max-width: 460px;
+    margin: 40px auto;
+    padding: 0 16px;
+}
+
+.app > h1 {
+    font-size: 16px;
+    margin: 0 0 8px;
+}
+
+.source {
+    margin: 0 0 24px;
+    font-size: 12px;
+    color: #666;
+}
+
+.source code {
+    color: #5b21b6;
+}
+
+.source.error {
+    color: #b91c1c;
+}
+
+/*
+ * TEMPORARY. bindjs-react's Renderer hard-codes overflow:hidden and height:100% on its
+ * container and exposes no prop for either, so a surface taller than its box is clipped.
+ * Marked important because styled-components injects its own rule at runtime, so a rule
+ * of matching specificity loses on order. Remove once Renderer takes an overflow prop
+ * and A2UIRenderer forwards it.
+ */
+.rendererContainer {
+    overflow: visible !important;
+    height: auto !important;
+}

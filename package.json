@@ -1,0 +1,42 @@
+{
+    "name": "@metabindai/a2ui-bindjs-workspace",
+    "version": "0.0.0",
+    "private": true,
+    "description": "A2UI (Agent-to-UI) renderer built on BindJS \u2014 web and native",
+    "license": "Apache-2.0",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/metabindai/a2ui-bindjs.git"
+    },
+    "homepage": "https://github.com/metabindai/a2ui-bindjs#readme",
+    "bugs": {
+        "url": "https://github.com/metabindai/a2ui-bindjs/issues"
+    },
+    "type": "module",
+    "packageManager": "pnpm@10.13.0",
+    "scripts": {
+        "dev": "pnpm dev:playground",
+        "dev:minimal": "pnpm build:lib && pnpm --filter @metabindai/a2ui-bindjs-minimal dev",
+        "dev:custom-catalog": "pnpm build:lib && pnpm --filter @metabindai/a2ui-bindjs-custom-catalog dev",
+        "dev:metabind": "pnpm build:lib && pnpm --filter @metabindai/a2ui-bindjs-metabind dev",
+        "dev:mcp": "pnpm build:lib && pnpm --filter @metabindai/a2ui-bindjs-mcp dev",
+        "dev:playground": "pnpm build:lib && pnpm --filter @metabindai/a2ui-bindjs-playground dev",
+        "check:ios": "pnpm sync:native && swift run --package-path examples/ios/minimal A2UIMinimal --check",
+        "dev:ios": "pnpm sync:native && swift run --package-path examples/ios/minimal A2UIMinimal",
+        "build": "pnpm -r build",
+        "build:lib": "pnpm build:core && pnpm build:react",
+        "build:core": "pnpm --filter @metabindai/a2ui-bindjs build",
+        "build:react": "pnpm --filter @metabindai/a2ui-bindjs-react build",
+        "build:bundle": "pnpm --filter @metabindai/a2ui-bindjs build:bundle",
+        "test": "pnpm -r test",
+        "validate:catalog": "pnpm --filter @metabindai/a2ui-bindjs validate:catalog",
+        "format": "prettier --write \"core/**/*.{ts,tsx,json}\" \"react/**/*.{ts,tsx,json}\" \"*.md\"",
+        "format:check": "prettier --check \"core/**/*.{ts,tsx,json}\" \"react/**/*.{ts,tsx,json}\"",
+        "sync:native": "pnpm --filter @metabindai/a2ui-bindjs sync:native",
+        "clean": "pnpm -r exec rm -rf dist dist-bundle"
+    },
+    "devDependencies": {
+        "prettier": "^3.9.6",
+        "typescript": "~5.6.2"
+    }
+}

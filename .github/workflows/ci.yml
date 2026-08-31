@@ -1,0 +1,75 @@
+name: CI
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+
+# A new push to the same branch makes the previous run irrelevant.
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    web:
+        name: build and test
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v4
+
+            # Before setup-node, so its pnpm cache has something to key on.
+            - uses: pnpm/action-setup@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: pnpm
+
+            - run: pnpm install --frozen-lockfile
+
+            - name: Check formatting
+              run: pnpm format:check
+
+            - name: Build
+              run: pnpm build
+
+            # Includes the official A2UI conformance suite and the 43 spec examples.
+            - name: Test
+              run: pnpm test
+
+            # Skips cleanly when the Metabind CLI is not installed, which it is not here.
+            - name: Validate the catalog
+              run: pnpm validate:catalog
+
+    native:
+        name: swift
+        runs-on: macos-latest
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: pnpm/action-setup@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: pnpm
+
+            - run: pnpm install --frozen-lockfile
+
+            # The renderer bundle is generated but committed, so an example runs without a
+            # JavaScript toolchain. That only holds if the committed copy is current.
+            - name: The committed renderer bundle is up to date
+              run: |
+                  pnpm sync:native
+                  git diff --exit-code -- ios/packages/a2ui-bindjs-apple/Sources/A2UI/Resources/a2ui-native.js
+
+            - name: Build the Apple package and the example
+              run: swift build --package-path examples/ios/minimal
+
+            # Exercises the JavaScript bridge on JavaScriptCore: messages in, AST out,
+            # a tap resolved through the host's runtime, and the redraw signal.
+            - name: Run the headless checks
+              timeout-minutes: 5
+              run: swift run --package-path examples/ios/minimal A2UIMinimal --check

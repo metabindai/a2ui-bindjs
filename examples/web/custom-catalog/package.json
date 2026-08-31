@@ -1,0 +1,33 @@
+{
+    "name": "@metabindai/a2ui-bindjs-custom-catalog",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "description": "Bringing your own runtime and overriding catalog components",
+    "scripts": {
+        "dev": "vite",
+        "build": "tsc -b && vite build",
+        "preview": "vite preview",
+        "test": "vitest run"
+    },
+    "dependencies": {
+        "@metabindai/a2ui-bindjs": "workspace:*",
+        "@metabindai/a2ui-bindjs-react": "workspace:*",
+        "@metabindai/bindjs-react": "^1.0.5",
+        "@metabindai/bindjs-runtime": "^1.0.9",
+        "react": "^18.3.1",
+        "react-dom": "^18.3.1",
+        "styled-components": "^6.1.14"
+    },
+    "devDependencies": {
+        "@testing-library/dom": "^10.4.1",
+        "@testing-library/react": "^16.3.0",
+        "@types/react": "^18.3.18",
+        "@types/react-dom": "^18.3.5",
+        "@vitejs/plugin-react": "^4.3.4",
+        "jsdom": "^28.0.0",
+        "typescript": "~5.6.2",
+        "vite": "^6.0.5",
+        "vitest": "^3.1.1"
+    }
+}

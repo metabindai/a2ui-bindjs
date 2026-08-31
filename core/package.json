@@ -1,0 +1,66 @@
+{
+    "name": "@metabindai/a2ui-bindjs",
+    "version": "0.1.0",
+    "private": false,
+    "description": "A2UI (Agent-to-UI) protocol, store, function library and rendering engine, built on the BindJS runtime.",
+    "license": "Apache-2.0",
+    "author": "Yap Studios",
+    "keywords": [
+        "a2ui",
+        "bindjs",
+        "metabind",
+        "server-driven-ui",
+        "renderer"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/metabindai/a2ui-bindjs.git",
+        "directory": "core"
+    },
+    "homepage": "https://github.com/metabindai/a2ui-bindjs#readme",
+    "bugs": {
+        "url": "https://github.com/metabindai/a2ui-bindjs/issues"
+    },
+    "type": "module",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "default": "./dist/index.js"
+        }
+    },
+    "sideEffects": false,
+    "files": [
+        "dist",
+        "dist-bundle"
+    ],
+    "scripts": {
+        "dev": "tsc --watch",
+        "build": "node scripts/build-catalog.mjs && rm -rf dist && tsc -b",
+        "test": "node scripts/build-catalog.mjs && vitest run",
+        "test:watch": "vitest",
+        "build:catalog": "node scripts/build-catalog.mjs",
+        "build:bundle": "node scripts/build-catalog.mjs && node scripts/build-bundle.mjs",
+        "validate:catalog": "node scripts/validate-catalog.mjs",
+        "sync:native": "node scripts/build-catalog.mjs && node scripts/sync-native.mjs"
+    },
+    "peerDependencies": {
+        "@metabindai/bindjs-runtime": "^1.0.9"
+    },
+    "devDependencies": {
+        "@metabindai/bindjs-runtime": "^1.0.9",
+        "@types/node": "^22.10.5",
+        "ajv": "^8.20.0",
+        "ajv-formats": "^3.0.1",
+        "esbuild": "^0.25.0",
+        "typescript": "~5.6.2",
+        "vitest": "^3.1.1",
+        "yaml": "^2.9.0"
+    },
+    "publishConfig": {
+        "access": "public"
+    }
+}
