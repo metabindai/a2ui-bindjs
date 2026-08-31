@@ -33,7 +33,15 @@ different vocabulary, not a version flag.
 `tests/conformance.test.ts` runs all 43 example surfaces through the engine.
 
 When adding or changing a catalog component, read its definition in
-`vendor/spec/v1_0/catalogs/basic/catalog.json` first. Guessing a component's shape is how Tabs
+`vendor/spec/v1_0/catalogs/basic/catalog.json` first, and check that the body reads every
+property it declares. A property the component never mentions is invisible: the engine
+passes props through, so an agent setting it gets silence rather than a diagnostic. That is
+how `DateTimeInput` came to read a `mode` prop that v1.0 does not define while ignoring
+`enableDate`, `enableTime`, `min` and `max`.
+
+`weight` is the exception — it is declared on a child but read by its `Row` or `Column`
+parent, which the engine hands `childWeights` because only the engine can see each child's
+node. Guessing a component's shape is how Tabs
 (`tabs: [{title, child}]`, not `children` + labels) and Modal (`trigger` / `content`, not
 positional children) were shipped broken — and because the engine simply ignores child
 ids in properties it does not know about, neither produced a diagnostic.
