@@ -42,6 +42,57 @@ jobs:
             - name: Validate the catalog
               run: pnpm validate:catalog
 
+            # What `workspace:*` hides: a missing `files` entry, a wrong `exports` path, a
+            # dependency left in the wrong section, or a workspace range that never got
+            # rewritten. Packed with pnpm rather than npm, because only pnpm rewrites
+            # `workspace:^` into a real semver range — and because `prepack` has to run or
+            # the tarball is just a package.json.
+            - name: The published packages install and work
+              run: |
+                  set -euo pipefail
+                  rm -rf /tmp/pkg && mkdir -p /tmp/pkg
+                  (cd core && pnpm pack --pack-destination /tmp/pkg)
+                  (cd react && pnpm pack --pack-destination /tmp/pkg)
+
+                  node -e "
+                    const { readFileSync } = require('node:fs')
+                    const { execSync } = require('node:child_process')
+                    const manifest = execSync('tar -xzO -f /tmp/pkg/metabindai-a2ui-bindjs-react-0.1.0.tgz package/package.json')
+                    const dependency = JSON.parse(manifest).dependencies['@metabindai/a2ui-bindjs']
+                    if (dependency.startsWith('workspace:')) {
+                      throw new Error('react still depends on core by workspace range: ' + dependency)
+                    }
+                    console.log('react → core resolves to', dependency)
+                  "
+
+                  rm -rf /tmp/consumer && mkdir -p /tmp/consumer && cd /tmp/consumer
+                  npm init -y > /dev/null
+                  npm i --silent /tmp/pkg/metabindai-a2ui-bindjs-0.1.0.tgz @metabindai/bindjs-runtime
+
+                  node --input-type=module -e "
+                    import { SurfaceStore, validateMessages, BASIC_CATALOG_SOURCES } from '@metabindai/a2ui-bindjs'
+
+                    const store = new SurfaceStore()
+                    store.apply({ createSurface: { surfaceId: 's', components: [{ id: 'root', component: 'Text', text: 'hi' }], dataModel: {} } })
+
+                    const issues = validateMessages([{ createSurface: { surfaceId: 's', components: [{ id: 'root', component: 'Card', child: 'gone' }], dataModel: {} } }])
+
+                    if (store.surfaceIds.length !== 1) throw new Error('the store did not apply a surface')
+                    if (Object.keys(BASIC_CATALOG_SOURCES).length !== 18) throw new Error('the catalog did not ship')
+                    if (issues[0]?.code !== 'DANGLING_REFERENCE') throw new Error('validation did not ship')
+                  "
+
+                  node -e "
+                    const { readFileSync } = require('node:fs')
+                    const bundle = require.resolve('@metabindai/a2ui-bindjs').replace(/dist.index[.]js\$/, 'dist-bundle/a2ui-native.js')
+                    const source = readFileSync(bundle, 'utf8')
+                    if (/\brequire\s*\(/.test(source) || /\bprocess[.]/.test(source)) {
+                      throw new Error('the native bundle is not self-contained')
+                    }
+                    console.log('native bundle ok:', source.length, 'bytes')
+                  "
+
+
     native:
         name: swift
         runs-on: macos-latest
@@ -65,7 +116,11 @@ jobs:
                   pnpm sync:native
                   git diff --exit-code -- ios/packages/a2ui-bindjs-apple/Sources/A2UI/Resources/a2ui-native.js
 
-            - name: Build the Apple package and the example
+            # The root manifest is what a SwiftPM consumer resolves by URL.
+            - name: Build the Apple library
+              run: swift build
+
+            - name: Build the example
               run: swift build --package-path examples/ios/minimal
 
             # Exercises the JavaScript bridge on JavaScriptCore: messages in, AST out,

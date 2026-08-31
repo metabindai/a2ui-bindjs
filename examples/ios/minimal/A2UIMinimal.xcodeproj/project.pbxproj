@@ -17,12 +17,12 @@
 
 /* Begin PBXFileReference section */
 		296F89499A4C39718FBC27C7 /* Agent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Agent.swift; sourceTree = "<group>"; };
+		6BD59A6337A1D778162B4A21 /* a2ui-bindjs */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "a2ui-bindjs"; path = ../../..; sourceTree = SOURCE_ROOT; };
 		726CAA37705F2E230D26414D /* Demo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Demo.swift; sourceTree = "<group>"; };
 		73B50A038329209EBC76E8E1 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		9979E97DAB38F49690B3C131 /* A2UIMinimal.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = A2UIMinimal.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9A40834F6010012305527923 /* Checks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Checks.swift; sourceTree = "<group>"; };
 		A30B07ED9A86D8EDC3552633 /* A2UIMinimalApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = A2UIMinimalApp.swift; sourceTree = "<group>"; };
-		BE407305DB15C7B1B6FB23F2 /* a2ui-bindjs-apple */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "a2ui-bindjs-apple"; path = "../../../ios/packages/a2ui-bindjs-apple"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -77,7 +77,7 @@
 		A803B2A8485B19A713A6519B /* Packages */ = {
 			isa = PBXGroup;
 			children = (
-				BE407305DB15C7B1B6FB23F2 /* a2ui-bindjs-apple */,
+				6BD59A6337A1D778162B4A21 /* a2ui-bindjs */,
 			);
 			name = Packages;
 			sourceTree = "<group>";
@@ -124,7 +124,7 @@
 			mainGroup = A7B0378D91E9EFEE0B42AF9C;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				5DC35461936C7E4BD15CA972 /* XCLocalSwiftPackageReference "../../../ios/packages/a2ui-bindjs-apple" */,
+				3A044D1164AF46D81AADF750 /* XCLocalSwiftPackageReference "../../.." */,
 			);
 			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
@@ -330,9 +330,9 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		5DC35461936C7E4BD15CA972 /* XCLocalSwiftPackageReference "../../../ios/packages/a2ui-bindjs-apple" */ = {
+		3A044D1164AF46D81AADF750 /* XCLocalSwiftPackageReference "../../.." */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = "../../../ios/packages/a2ui-bindjs-apple";
+			relativePath = ../../..;
 		};
 /* End XCLocalSwiftPackageReference section */
 

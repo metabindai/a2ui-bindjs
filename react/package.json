@@ -39,12 +39,13 @@
     ],
     "scripts": {
         "dev": "tsc --watch",
+        "prepack": "pnpm run build",
         "build": "rm -rf dist && tsc -b",
         "test": "vitest run",
         "test:watch": "vitest"
     },
     "dependencies": {
-        "@metabindai/a2ui-bindjs": "workspace:*"
+        "@metabindai/a2ui-bindjs": "workspace:^"
     },
     "peerDependencies": {
         "@metabindai/bindjs-react": "^1.0.5",

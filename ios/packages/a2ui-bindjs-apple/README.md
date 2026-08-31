@@ -15,12 +15,18 @@ A2UISurfaceView(host: host)                // in a SwiftUI body
 That is the whole surface area. `setValue`, `reset`, `surfaceIds` and `diagnostics` round
 it out; nothing else needs to be public.
 
-## Why it lives here
+## Where the manifest is
 
-It is a local package beside the example, not a repo of its own, because the four
-`BindJSContext` methods it stands on are not upstream in `bindjs-apple` yet — see
-`../../vendor/README.md`. Nothing in it knows about the example, so promoting it is a move
-plus swapping the path dependency for a versioned one.
+At the repository root. SwiftPM resolves a package by the manifest at the root of the repo,
+so `Package.swift` there declares this library and points its target at `Sources/A2UI`:
+
+```swift
+.package(url: "https://github.com/metabindai/a2ui-bindjs.git", from: "0.1.0")
+```
+
+It depends on the vendored `bindjs-apple` by path, because the four `BindJSContext` methods
+it stands on are not upstream yet — see `../../vendor/README.md`. That becomes a versioned
+dependency once they are released.
 
 ## The two things a host has to get right
 

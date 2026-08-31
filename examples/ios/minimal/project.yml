@@ -12,10 +12,10 @@ options:
     groupSortPosition: none
 
 packages:
-    # What would ship as `a2ui-bindjs-apple`; it carries the renderer bundle as a resource
-    # and depends on the vendored `bindjs-apple` itself.
+    # The repository root, whose Package.swift declares the A2UI library. It carries the
+    # renderer bundle as a resource and depends on the vendored `bindjs-apple` itself.
     A2UI:
-        path: ../../../ios/packages/a2ui-bindjs-apple
+        path: ../../..
 
 targets:
     A2UIMinimal:

@@ -40,6 +40,37 @@ layer that decides what `Text`, `Card` and `ChoicePicker` actually are — can b
   catalog and register it without shipping an app update. `examples/web/metabind` pulls one
   from a Metabind project; `examples/web/custom-catalog` overrides two components inline.
 
+## Installing
+
+**React on the web.** The BindJS runtime and renderer are peer dependencies, so they are
+installed alongside rather than bundled:
+
+```sh
+npm i @metabindai/a2ui-bindjs-react \
+      @metabindai/bindjs-react @metabindai/bindjs-runtime \
+      react react-dom styled-components
+```
+
+**Anywhere else in JavaScript** — an agent, a server, a host with its own renderer — take
+core on its own. It has one peer dependency and no runtime dependencies:
+
+```sh
+npm i @metabindai/a2ui-bindjs @metabindai/bindjs-runtime
+```
+
+**iOS and macOS**, through SwiftPM:
+
+```swift
+.package(url: "https://github.com/metabindai/a2ui-bindjs.git", from: "0.1.0")
+```
+
+then depend on the `A2UI` product. It brings the renderer with it as a resource, so no
+JavaScript toolchain is involved in building an app.
+
+**Another native platform.** `dist-bundle/a2ui-native.js` inside the core package is the
+whole engine as one dependency-free file, for any host that can embed a JavaScript context.
+`ios/` is the worked example of driving it.
+
 ## Layout
 
 The top level splits by platform. `vendor/spec/` is the protocol itself.

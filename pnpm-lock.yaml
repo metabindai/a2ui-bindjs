@@ -329,7 +329,7 @@ importers:
   react:
     dependencies:
       '@metabindai/a2ui-bindjs':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
     devDependencies:
       '@metabindai/bindjs-react':

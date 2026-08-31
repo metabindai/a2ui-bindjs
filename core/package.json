@@ -39,6 +39,7 @@
     ],
     "scripts": {
         "dev": "tsc --watch",
+        "prepack": "pnpm run build && pnpm run build:bundle",
         "build": "node scripts/build-catalog.mjs && rm -rf dist && tsc -b",
         "test": "node scripts/build-catalog.mjs && vitest run",
         "test:watch": "vitest",
