@@ -90,7 +90,7 @@ Authoring rules:
 - Prefer a **named control over a hand-drawn one** where BindJS has it. `ChoicePicker`
   builds single selection from `Picker` + `.pickerStyle`, so it arrives as a real
   `UISegmentedControl` on iOS and a `<select>` on the web, instead of styled `Button`s that
-  look native on neither. It also produced a 27% smaller AST for the same surface.
+  look native on neither, and it produces a smaller AST.
 - Props carry their **A2UI names**. The engine passes them through; it makes no
   presentation decisions, so anything about spacing, fonts or colour belongs here.
 - The engine injects exactly two things: `action` (a function) on nodes with an A2UI
@@ -119,11 +119,14 @@ Authoring rules:
 Two packages, versioned in lockstep: `core` and `react`. Everything under `examples/` is
 `private: true` and never publishes.
 
-**Both are `private: true` right now**, because the repository is. Nothing can reach npm by
-accident, and the release workflow fails loudly rather than publishing nothing. When the
-repository goes public, remove `private` from both manifests — and do that _before_ the
-first publish, since `repository`, `homepage` and `bugs` all point at a URL that 404s for
-anyone outside the org until then.
+Both publish with `access: restricted` — private npm packages, installable by members of the
+`@metabindai` org, matching the repository while it is private. Making them public is two
+edits: `publishConfig.access` in both manifests, and the flag in `release.yml`. Do that
+before publishing a public version, since `repository`, `homepage` and `bugs` point at a URL
+that 404s for anyone outside the org.
+
+Publishing prompts for a 2FA one-time password unless the token is an npm **automation**
+token, which is what `NPM_TOKEN` should be so CI never has to ask.
 
 1. Bump `version` in `core/package.json` and `react/package.json` to the same number, and
    `VERSION` in `core/src/index.ts` to match.
@@ -135,8 +138,7 @@ without publishing.
 
 **Publish with `pnpm`, never `npm`.** react depends on core through `workspace:^`, and only
 pnpm rewrites that into a real semver range on pack. Publishing with npm ships a dependency
-no consumer can resolve. The packaging job in `ci.yml` asserts the rewrite happened, which
-is how that was caught in the first place.
+no consumer can resolve. The packaging job in `ci.yml` asserts the rewrite happened.
 
 Both packages build on `prepack`, because `dist/` and `dist-bundle/` are generated and
 gitignored — without it a clean checkout publishes nothing but a `package.json`.
@@ -196,7 +198,7 @@ modifier — iOS draws it as intended.
 
 ## Overriding a catalog component
 
-Two ways, and the short one is now the default answer. Pass `sources` (component name →
+Two ways, and the short one is usually right. Pass `sources` (component name →
 BindJS source) and a `catalog` pointing at it, and `<A2UIRenderer>` registers them on the
 runtime it already owns — no `BindJSRuntime` to construct. Registration happens in a
 `useMemo` during render, not an effect, so the first paint already has them, and it is
