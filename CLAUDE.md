@@ -89,6 +89,10 @@ tests can see — a layout's props-form requiring a literal `Component[]`, for i
 which is valid JavaScript, renders fine here, and is rejected on push. It skips cleanly
 when the CLI is not installed.
 
+Run `pnpm sync:native` too. The renderer bundle the Apple package ships is generated from
+these sources and committed, so editing one without regenerating leaves the native side on
+the previous version — CI fails on exactly that.
+
 `src/catalog/basic/*.js` are real BindJS sources, edited on disk. `pnpm build:catalog`
 (also run by `build` and `test`) inlines them into `src/catalog/basic/sources.generated.ts`
 — generated, gitignored, never edited by hand.
