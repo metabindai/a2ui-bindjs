@@ -7,7 +7,29 @@
  *
  * A `RenderSession` additionally memoises subtrees across renders, so pushing a stream
  * of updates at a live surface only re-invokes the components whose inputs changed.
- * See `docs/PLAN.md` for why this is safe with the runtime's hook storage.
+ *
+ * Why that is safe with the runtime's hook storage, verified against it directly:
+ *
+ *   - Hook state is keyed by an absolute path string (`componentHookStore['VStack_0.Leaf_1']`)
+ *     in a store that persists across renders. `willRender()` resets only the cursor. So
+ *     skipping a component leaves its state untouched — there is nothing to save or restore,
+ *     and this engine keeps no hook bookkeeping of its own.
+ *   - Splicing a cached subtree works because `processChildren` invokes a child only when it
+ *     is a function; a plain AST object passes through. Measured: rebuilding one sibling
+ *     while splicing the other's cached AST ran the cached body **zero** times, and its
+ *     `useState` value was still intact when it was later rebuilt.
+ *   - The cache must hold the **unwrapped** AST, not the proxy `callComponent` returns. The
+ *     proxy is cheap; the cost is body invocation during unwrap.
+ *
+ * Two constraints follow, and both are load-bearing:
+ *
+ *   1. Sibling positions must stay stable, because a hook path uses a component's index
+ *      among its siblings. Dropping a child shifts every later sibling onto the previous
+ *      one's stored state — confirmed by dropping the first of three and watching the second
+ *      render with the first's hook value. A child that fails to build is replaced with a
+ *      placeholder rather than removed.
+ *   2. Invalidation must cover everything the body read: resolved props, children, and the
+ *      component definition. Missing one serves a stale subtree.
  */
 import {
     ROOT_COMPONENT_ID,

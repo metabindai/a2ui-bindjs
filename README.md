@@ -112,8 +112,7 @@ host.apply(messagesFromTheAgent)
 A2UISurfaceView(host: host)
 ```
 
-`ios/README.md` covers what a native host has to get right. `docs/PLAN.md` is the original
-build plan, kept for the reasoning rather than as current documentation.
+`ios/README.md` covers what a native host has to get right.
 
 ## License
 
