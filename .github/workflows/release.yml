@@ -59,6 +59,27 @@ jobs:
                     }
                   "
 
+            # Both packages are `private: true` while the repository is, so nothing can be
+            # published by accident. Without this check a tagged release would publish
+            # nothing and still go green, which is a worse outcome than failing.
+            - name: The packages are publishable
+              run: |
+                  set -euo pipefail
+                  node -e "
+                    const { readFileSync } = require('node:fs')
+
+                    for (const path of ['core/package.json', 'react/package.json']) {
+                      const { name, private: isPrivate } = JSON.parse(readFileSync(path, 'utf8'))
+
+                      if (isPrivate) {
+                        throw new Error(
+                          name + ' is marked private, so this release would publish nothing. ' +
+                          'Remove \"private\" from both manifests when the repository goes public.'
+                        )
+                      }
+                    }
+                  "
+
             - name: Build
               run: pnpm build
 

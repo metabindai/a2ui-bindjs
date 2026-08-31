@@ -42,6 +42,9 @@ layer that decides what `Text`, `Card` and `ChoicePicker` actually are — can b
 
 ## Installing
 
+> Not published yet. Both packages are `private` until this repository is public; the
+> commands below are what installing will look like.
+
 **React on the web.** The BindJS runtime and renderer are peer dependencies, so they are
 installed alongside rather than bundled:
 

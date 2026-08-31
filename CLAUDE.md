@@ -113,6 +113,12 @@ Authoring rules:
 Two packages, versioned in lockstep: `core` and `react`. Everything under `examples/` is
 `private: true` and never publishes.
 
+**Both are `private: true` right now**, because the repository is. Nothing can reach npm by
+accident, and the release workflow fails loudly rather than publishing nothing. When the
+repository goes public, remove `private` from both manifests — and do that _before_ the
+first publish, since `repository`, `homepage` and `bugs` all point at a URL that 404s for
+anyone outside the org until then.
+
 1. Bump `version` in `core/package.json` and `react/package.json` to the same number, and
    `VERSION` in `core/src/index.ts` to match.
 2. Commit, tag `v<version>`, push the tag. `.github/workflows/release.yml` refuses to

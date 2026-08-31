@@ -1,7 +1,7 @@
 {
     "name": "@metabindai/a2ui-bindjs",
     "version": "0.1.0",
-    "private": false,
+    "private": true,
     "description": "A2UI (Agent-to-UI) protocol, store, function library and rendering engine, built on the BindJS runtime.",
     "license": "Apache-2.0",
     "author": "Yap Studios",
