@@ -1,7 +1,6 @@
 {
     "name": "@metabindai/a2ui-bindjs-react",
     "version": "0.1.0",
-    "private": true,
     "description": "React renderer for A2UI surfaces, built on the BindJS web renderer.",
     "license": "Apache-2.0",
     "author": "Yap Studios",
@@ -69,6 +68,6 @@
         "vitest": "^3.1.1"
     },
     "publishConfig": {
-        "access": "public"
+        "access": "restricted"
     }
 }

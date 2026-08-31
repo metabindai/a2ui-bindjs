@@ -59,9 +59,8 @@ jobs:
                     }
                   "
 
-            # Both packages are `private: true` while the repository is, so nothing can be
-            # published by accident. Without this check a tagged release would publish
-            # nothing and still go green, which is a worse outcome than failing.
+            # A `private: true` manifest publishes nothing while still reporting success,
+            # which is worse than failing. Access is controlled by publishConfig, not this.
             - name: The packages are publishable
               run: |
                   set -euo pipefail
@@ -72,10 +71,7 @@ jobs:
                       const { name, private: isPrivate } = JSON.parse(readFileSync(path, 'utf8'))
 
                       if (isPrivate) {
-                        throw new Error(
-                          name + ' is marked private, so this release would publish nothing. ' +
-                          'Remove \"private\" from both manifests when the repository goes public.'
-                        )
+                        throw new Error(name + ' is marked private, so this release would publish nothing.')
                       }
                     }
                   "
@@ -89,17 +85,20 @@ jobs:
             # `pnpm`, never `npm`. Only pnpm rewrites the `workspace:^` range react uses to
             # depend on core; publishing with npm ships a dependency no consumer can resolve.
             #
+            # `--access restricted`: these are private packages, installable by the org while
+            # the repository is private. Switch to `public` when it opens up.
+            #
             # `--no-git-checks` because a tag build is a detached HEAD, which pnpm otherwise
             # refuses. `--provenance` is deliberately absent: npm only attests builds from
             # public repositories, so add it when this repo becomes one.
             - name: Publish
               if: ${{ github.event_name == 'push' }}
-              run: pnpm publish --recursive --access public --no-git-checks
+              run: pnpm publish --recursive --access restricted --no-git-checks
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
             - name: Dry run
               if: ${{ github.event_name == 'workflow_dispatch' }}
-              run: pnpm publish --recursive --access public --no-git-checks --dry-run
+              run: pnpm publish --recursive --access restricted --no-git-checks --dry-run
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
