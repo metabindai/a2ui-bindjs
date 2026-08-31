@@ -108,6 +108,30 @@ Authoring rules:
   valid — they do not throw, they simply produce no colour, so a control silently stops
   reflecting its own state. `tests/colors.test.ts` checks every catalog source.
 
+## Releasing
+
+Two packages, versioned in lockstep: `core` and `react`. Everything under `examples/` is
+`private: true` and never publishes.
+
+1. Bump `version` in `core/package.json` and `react/package.json` to the same number, and
+   `VERSION` in `core/src/index.ts` to match.
+2. Commit, tag `v<version>`, push the tag. `.github/workflows/release.yml` refuses to
+   publish if the tag and the manifests disagree.
+
+`workflow_dispatch` on that workflow does a dry run by default — packs and validates
+without publishing.
+
+**Publish with `pnpm`, never `npm`.** react depends on core through `workspace:^`, and only
+pnpm rewrites that into a real semver range on pack. Publishing with npm ships a dependency
+no consumer can resolve. The packaging job in `ci.yml` asserts the rewrite happened, which
+is how that was caught in the first place.
+
+Both packages build on `prepack`, because `dist/` and `dist-bundle/` are generated and
+gitignored — without it a clean checkout publishes nothing but a `package.json`.
+
+`--provenance` is deliberately not enabled: npm only attests builds from public
+repositories. Turn it on when this one becomes public.
+
 ## Rules
 
 - `core/` must stay framework-agnostic and free of React imports. React lives in its own

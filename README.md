@@ -145,6 +145,12 @@ A2UISurfaceView(host: host)
 
 `ios/README.md` covers what a native host has to get right.
 
+## Releasing
+
+Bump both manifests to the same version, tag `v<version>`, push the tag. See the
+`## Releasing` section of `CLAUDE.md` for the details, including why publishing must go
+through pnpm.
+
 ## License
 
 Apache License 2.0.
