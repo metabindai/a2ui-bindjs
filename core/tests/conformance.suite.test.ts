@@ -30,8 +30,11 @@ import { fileURLToPath } from 'node:url'
 import { afterAll, describe, expect, it } from 'vitest'
 import { parse as parseYaml } from 'yaml'
 
+import Ajv2020 from 'ajv/dist/2020'
+import addFormats from 'ajv-formats'
+
 import { parseMessage } from '../src/protocol/parse'
-import { validateMessages } from '../src/validation/validate'
+import { validateMessages, type SchemaIssue, type SchemaValidator } from '../src/validation/validate'
 import type { AgentMessage } from '../src/protocol/types'
 
 // MARK: - The suite
@@ -57,31 +60,25 @@ const SUPPORTED_VERSIONS = new Set(['0.9', '1.0'])
  * that wants to reject a bad payload up front (and answer the agent with `error`) has no
  * way to ask.
  */
-const KNOWN_GAPS: Record<string, string> = {
-    // Full message-schema validation. The parser checks a message's shape and the
-    // validator checks the component graph; neither enforces every field rule the v0.9
-    // schema states — `version` required and drawn from a known set, `surfaceId` typed,
-    // `catalogId` required. Enforcing them would reject messages this renderer accepts
-    // today by design, so it is a decision rather than an oversight.
-    test_validator_0_9: 'message fields are not validated against the full schema',
-
-    // Needs a JSON Schema validator to check component properties against the catalog
-    // definition, and `core/` ships with no runtime dependencies — the bundle build fails
-    // if one appears. A host that wants this can validate with its own before applying.
-    test_custom_catalog_validation_failure_v09:
-        'component properties are not checked against the catalog schema; core carries no JSON Schema validator',
-}
+const KNOWN_GAPS: Record<string, string> = {}
 
 interface ConformanceStep {
     payload?: unknown
     expect_error?: unknown
 }
 
+interface CatalogConfig {
+    version?: string | number
+    s2c_schema?: string | Record<string, unknown>
+    catalog_schema?: string | Record<string, unknown>
+    common_types_schema?: string | Record<string, unknown>
+}
+
 interface ConformanceCase extends ConformanceStep {
     name: string
     description?: string
     action: string
-    catalog?: { version?: string | number }
+    catalog?: CatalogConfig
     steps?: ConformanceStep[]
     validate?: ConformanceStep[]
 }
@@ -106,6 +103,74 @@ function stepsOf(testCase: ConformanceCase): ConformanceStep[] {
     return [testCase]
 }
 
+// MARK: - Schema validation, as the host supplies it
+
+function loadSchema(value: string | Record<string, unknown> | undefined): Record<string, unknown> | undefined {
+    if (value === undefined) {
+        return undefined
+    }
+
+    if (typeof value !== 'string') {
+        return value
+    }
+
+    return JSON.parse(readFileSync(`${suiteDir}${value}`, 'utf8')) as Record<string, unknown>
+}
+
+/**
+ * Builds the engine core asks for, from the schemas the case supplies.
+ *
+ * The message schema reaches the catalog through `catalog.json#/$defs/anyComponent`, so all
+ * three documents are registered under the `$id`s those references expect — a catalog given
+ * inline gets the slot's id, since it has none of its own. Validating a message therefore
+ * validates the components inside it too.
+ */
+function schemaValidatorFor(config: CatalogConfig | undefined): SchemaValidator | undefined {
+    const message = loadSchema(config?.s2c_schema)
+
+    if (!message) {
+        return undefined
+    }
+
+    const ajv = new Ajv2020({ strict: false, allErrors: true, validateFormats: false })
+
+    addFormats(ajv)
+
+    const version = String(config?.version ?? '0.9').replace('.', '_')
+    const base = `https://a2ui.org/specification/v${version}/`
+
+    for (const [slot, schema] of [
+        ['common_types.json', loadSchema(config?.common_types_schema)],
+        ['catalog.json', loadSchema(config?.catalog_schema)],
+    ] as const) {
+        if (!schema) {
+            continue
+        }
+
+        // Its own id first, then the slot the message schema refers to.
+        if (typeof schema.$id === 'string' && !ajv.getSchema(schema.$id)) {
+            ajv.addSchema(schema, schema.$id)
+        }
+
+        if (!ajv.getSchema(`${base}${slot}`)) {
+            ajv.addSchema(schema, `${base}${slot}`)
+        }
+    }
+
+    const validate = ajv.compile(message)
+
+    return (candidate): SchemaIssue[] => {
+        if (validate(candidate)) {
+            return []
+        }
+
+        return (validate.errors ?? []).map((error) => ({
+            path: error.instancePath || undefined,
+            message: `${error.instancePath || '/'} ${error.message ?? 'failed validation'}`,
+        }))
+    }
+}
+
 // MARK: - Running a payload through this renderer
 
 /**
@@ -117,12 +182,12 @@ function stepsOf(testCase: ConformanceCase): ConformanceStep[] {
  * valid payloads, and neither says anything about whether *our* catalog can draw them.
  * Rendering here would have failed those cases for the wrong reason.
  */
-function validatePayload(messages: AgentMessage[]): void {
+function validatePayload(messages: AgentMessage[], schema?: SchemaValidator): void {
     for (const message of messages) {
         parseMessage(message)
     }
 
-    const issues = validateMessages(messages)
+    const issues = validateMessages(messages, { schema })
 
     if (issues.length > 0) {
         throw new Error(issues.map((issue) => `${issue.code}: ${issue.message}`).join('; '))
@@ -130,9 +195,9 @@ function validatePayload(messages: AgentMessage[]): void {
 }
 
 /** Whether the renderer rejected a payload, without caring how it said so. */
-function rejects(messages: AgentMessage[]): boolean {
+function rejects(messages: AgentMessage[], schema?: SchemaValidator): boolean {
     try {
-        validatePayload(messages)
+        validatePayload(messages, schema)
 
         return false
     } catch {
@@ -197,6 +262,8 @@ describe('A2UI conformance suite', () => {
                         record(file, testCase.name, 'gap', gap)
                     }
 
+                    const schema = schemaValidatorFor(testCase.catalog)
+
                     for (const step of stepsOf(testCase)) {
                         const messages = (step.payload ?? []) as AgentMessage[]
                         const expected = step.expect_error ?? testCase.expect_error
@@ -204,7 +271,7 @@ describe('A2UI conformance suite', () => {
                         // Asserted on outcome, not on error text: the suite's categories and
                         // paths are the Python SDK's vocabulary, and this renderer has its
                         // own. What has to agree is accept versus reject.
-                        expect(rejects(messages), expected ? 'expected a rejection' : 'expected acceptance').toBe(Boolean(expected))
+                        expect(rejects(messages, schema), expected ? 'expected a rejection' : 'expected acceptance').toBe(Boolean(expected))
                     }
 
                     if (!gap) {

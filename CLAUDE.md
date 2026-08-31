@@ -45,9 +45,15 @@ Two suites, both run by `pnpm test`:
 - `core/tests/conformance.test.ts` — the 43 official spec examples, each validated against
   the schemas and rendered through the catalog.
 - `core/tests/conformance.suite.test.ts` — the official language-agnostic YAML suite,
-  vendored in `vendor/conformance/`. Cases we do not satisfy are named in `KNOWN_GAPS` and run
-  under `it.fails`, so they are counted rather than hidden; closing one turns the suite red
-  until its entry is removed. `vendor/conformance/README.md` explains the current standing.
+  vendored in `vendor/conformance/`. It stands at 20 passed, 0 gaps, 53 out of scope of 73
+  cases; the out-of-scope ones are v0.8 payloads and agent-SDK catalog operations.
+  `KNOWN_GAPS` is empty — anything added to it runs under `it.fails` so it stays counted,
+  and `vendor/conformance/README.md` carries the reasoning.
+
+Schema validation is **injected, not bundled**: `validateMessages(messages, { schema })`
+takes an engine from the host, because core has no runtime dependencies. Core decides what
+to validate and where the failure points; ajv (a devDependency) supplies the evaluation in
+tests. Without an engine the structural checks still run.
 
 `core/src/validation/` answers the structural question — dangling ids, self-reference,
 cycles, reachability, malformed paths, depth — and is deliberately **not** part of

@@ -9,7 +9,7 @@ import { readFileSync, readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 
-import { validateMessages } from '../src/validation/validate'
+import { validateMessages, type SchemaValidator } from '../src/validation/validate'
 import type { AgentMessage } from '../src/protocol/types'
 
 const examplesDir = fileURLToPath(new URL('../../vendor/spec/v1_0/catalogs/basic/examples/', import.meta.url))
@@ -18,8 +18,8 @@ function surfaceOf(components: unknown[], dataModel: unknown = {}): AgentMessage
     return [{ createSurface: { surfaceId: 's', components, dataModel } }] as unknown as AgentMessage[]
 }
 
-function codesFor(messages: AgentMessage[]): string[] {
-    return validateMessages(messages).map((issue) => issue.code)
+function codesFor(messages: AgentMessage[], schema?: SchemaValidator): string[] {
+    return validateMessages(messages, { schema }).map((issue) => issue.code)
 }
 
 describe('validateMessages', () => {
@@ -191,6 +191,60 @@ describe('validateMessages', () => {
             const messages = surfaceOf([{ id: 'root', component: 'Text', text: call }])
 
             expect(codesFor(messages)).toContain('FUNCTION_DEPTH_EXCEEDED')
+        })
+    })
+
+    describe('schema validation', () => {
+        /** Stands in for ajv: objects to any message whose surfaceId is not a string. */
+        const engine = (message: AgentMessage) => {
+            const created = (message as Record<string, { surfaceId?: unknown }>).createSurface
+
+            if (created && typeof created.surfaceId !== 'string') {
+                return [{ path: '/createSurface/surfaceId', message: 'must be a string' }]
+            }
+
+            return []
+        }
+
+        const messages = [
+            { createSurface: { surfaceId: 123, components: [{ id: 'root', component: 'Text', text: 'hi' }], dataModel: {} } },
+        ] as unknown as AgentMessage[]
+
+        it('reports what the engine objects to, pointed into the run of messages', () => {
+            const issues = validateMessages(messages, { schema: engine })
+
+            expect(issues[0]).toMatchObject({
+                code: 'SCHEMA_FAILED',
+                path: '/messages/0/createSurface/surfaceId',
+            })
+        })
+
+        /**
+         * Core carries no JSON Schema engine, so without one it checks structure only. A
+         * surfaceId of the wrong type is a schema question, not a graph question.
+         */
+        it('says nothing about schema when no engine is supplied', () => {
+            expect(validateMessages(messages)).toEqual([])
+        })
+
+        it('still reports structural problems alongside schema ones', () => {
+            // v1.0 requires `version` on every message; the graph is broken as well.
+            const requiresVersion = (message: AgentMessage) =>
+                'version' in (message as object) ? [] : [{ path: '/version', message: 'is required' }]
+
+            const broken = [
+                { createSurface: { surfaceId: 's', components: [{ id: 'root', component: 'Card', child: 'gone' }], dataModel: {} } },
+            ] as unknown as AgentMessage[]
+
+            expect(codesFor(broken, requiresVersion)).toEqual(['SCHEMA_FAILED', 'DANGLING_REFERENCE'])
+        })
+
+        /**
+         * A message whose surfaceId is not a string cannot be attributed to a surface, so
+         * there is no graph to check — the schema engine is the only thing that can speak.
+         */
+        it('leaves an unattributable message to the schema engine alone', () => {
+            expect(codesFor(messages, engine)).toEqual(['SCHEMA_FAILED'])
         })
     })
 

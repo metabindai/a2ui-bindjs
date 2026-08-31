@@ -18,7 +18,7 @@ concerns, not renderer behaviour.
 ## Current standing
 
 ```
-18 passed, 2 known gaps, 53 out of scope, of 73 cases
+20 passed, 0 known gaps, 53 out of scope, of 73 cases
 ```
 
 **Out of scope (53).** 39 are v0.8 payloads, which use a different vocabulary
@@ -27,33 +27,29 @@ supported. The other 14 are catalog operations an agent SDK performs before prom
 model — `prune`, `load`, `render`, `verify_cuttable_keys` — and `accessibility_check`, which
 drives axe-core.
 
-**Known gaps (2).** Neither is an oversight.
+**Known gaps: none.** The last two both wanted JSON Schema evaluation — one for message
+fields (`version` required, `surfaceId` typed), one for component properties against a
+custom catalog — and both are answered by the same mechanism.
 
-`test_validator_0_9` wants every field rule the v0.9 schema states enforced — `version`
-required and drawn from a known set, `surfaceId` typed, `catalogId` required. `parseMessage`
-checks a message's shape and `validateMessages` checks the component graph; neither enforces
-the full schema, and turning those on would reject messages this renderer accepts today.
+`validateMessages` accepts a `schema` option: a validator the **host** supplies. Core carries
+no JSON Schema engine, because it ships with no runtime dependencies at all and the bundle
+build fails if one appears. What core does is the orchestration — which message to validate,
+where the failure belongs in the run, and how to turn it into an issue with a JSON pointer
+the `error` message can carry. The harness supplies ajv, which is already a devDependency;
+`examples/web/metabind` is where this earns its keep, since it fetches a catalog at runtime
+and nothing otherwise checks the components against their declared schema.
 
-`test_custom_catalog_validation_failure_v09` wants component properties checked against the
-catalog's JSON Schema. That needs a JSON Schema validator, and `core/` ships with no runtime
-dependencies — the bundle build fails if one appears. A host that wants this can validate
-with its own before applying.
+Worth stating plainly: those two cases pass by **delegating** JSON Schema evaluation, not by
+implementing it. That is the same arrangement as a peer dependency, and a host with no engine
+simply omits the option and gets the structural checks alone.
 
-The other twelve were closed by `core/src/validation/validate.ts`: missing root, dangling
-references, self-reference, cycles, reachability through child templates, malformed data
-paths, function-call nesting, and graph and data-model depth. Two things that came out of
-running the suite properly are worth recording, because both would have made the validator
-wrong in practice:
+The message schema reaches the catalog through `catalog.json#/$defs/anyComponent`, so
+validating a message validates the components inside it — which is why one mechanism closed
+both cases rather than two.
 
-- **A path may be relative.** Inside a child template A2UI writes `title`, not
-  `/items/0/title`. Requiring a leading `/` rejected eleven of the official examples.
-- **A superseded component is not an orphan.** A stream that shows a placeholder and then
-  replaces it leaves the placeholder unreferenced at the end;
-  `31_incremental-dashboard.json` does exactly this. Reachability is judged over the whole
-  replay, not the final snapshot.
-
-Gaps are listed by name in `KNOWN_GAPS` in the harness and run under `it.fails`, so they
-stay counted, and closing one turns the suite red until its entry is deleted.
+`KNOWN_GAPS` in the harness is empty and should stay that way. Anything added to it runs
+under `it.fails`, so it stays counted rather than hidden, and closing it turns the suite red
+until the entry is deleted.
 
 ## Updating
 

@@ -32,6 +32,7 @@ import {
 // MARK: - Types
 
 export type ValidationCode =
+    | 'SCHEMA_FAILED'
     | 'MISSING_ROOT'
     | 'DANGLING_REFERENCE'
     | 'SELF_REFERENCE'
@@ -67,7 +68,30 @@ export function validationError(issue: ValidationIssue): ErrorMessage {
     }
 }
 
+/** One thing a JSON Schema engine objected to. */
+export interface SchemaIssue {
+    /** JSON Pointer into the message that failed, e.g. `/createSurface/surfaceId`. */
+    path?: string
+    message: string
+}
+
+/**
+ * A JSON Schema engine, supplied by the host.
+ *
+ * Core carries no runtime dependencies — the bundle build fails if one appears — so it does
+ * not evaluate JSON Schema itself. It knows *what* to validate and where the result belongs;
+ * the host brings the engine. Ajv is the obvious choice on Node, and a host that has none
+ * simply omits this and gets the structural checks alone.
+ *
+ * Called once per message. The message schema references the catalog, so validating a
+ * message also validates the components inside it.
+ */
+export type SchemaValidator = (message: AgentMessage) => SchemaIssue[]
+
 export interface ValidationOptions {
+    /** Schema validation, off unless a host provides an engine. */
+    schema?: SchemaValidator
+
     /**
      * Whether the surface is expected to be complete.
      *
@@ -128,7 +152,7 @@ const ROOT_ID = 'root'
 export function validateMessages(messages: readonly AgentMessage[], options: ValidationOptions = {}): ValidationIssue[] {
     const catalog = options.catalog ?? BASIC_CATALOG
     const surfaces = accumulate(messages, catalog)
-    const issues: ValidationIssue[] = []
+    const issues: ValidationIssue[] = [...schemaIssues(messages, options.schema)]
 
     for (const [surfaceId, surface] of surfaces) {
         // Only a surface this run created is judged whole.
@@ -202,6 +226,48 @@ export function validateSurface(
     }
 
     return issues
+}
+
+/**
+ * Each message against the schema, if the host gave us an engine.
+ *
+ * Paths are reported into the run of messages — `/messages/2/createSurface/surfaceId` —
+ * because that is where the reader can find the offending field.
+ */
+function schemaIssues(messages: readonly AgentMessage[], schema: SchemaValidator | undefined): ValidationIssue[] {
+    if (!schema) {
+        return []
+    }
+
+    const issues: ValidationIssue[] = []
+
+    messages.forEach((message, index) => {
+        for (const issue of schema(message)) {
+            issues.push({
+                code: 'SCHEMA_FAILED',
+                message: issue.message,
+                surfaceId: surfaceIdOf(message) ?? '',
+                path: `/messages/${index}${issue.path ?? ''}`,
+            })
+        }
+    })
+
+    return issues
+}
+
+/** The surface a message concerns, when it names one. */
+function surfaceIdOf(message: AgentMessage): string | undefined {
+    if (!isPlainObject(message)) {
+        return undefined
+    }
+
+    for (const value of Object.values(message)) {
+        if (isPlainObject(value) && typeof value.surfaceId === 'string') {
+            return value.surfaceId
+        }
+    }
+
+    return undefined
 }
 
 // MARK: - Assembling surfaces
