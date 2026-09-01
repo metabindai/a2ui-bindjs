@@ -40,7 +40,7 @@ BindJSContext                     one JSContext, one BindJSRuntime
   ├── a2ui-native.js              shipped by the A2UI package — attaches to that runtime
   │     host.apply(messages)      agent messages in
   │     host.ast(for: "main")  ►  AST
-  └── viewForAST(ast)          ►  SwiftUI
+  └── view(id:buildingAST:)    ►  SwiftUI
 ```
 
 **One runtime, shared.** `a2ui-native.js` does not create its own. A `handlerId` in the
@@ -86,5 +86,5 @@ path dependency below it becomes a versioned one and nothing else changes.
 ## `vendor/`
 
 `bindjs-apple` is checked in rather than referenced by version, so this example can be
-shared before the four `BindJSContext` methods it needs are released. See
+shared before the two `BindJSContext` members it needs are released. See
 `vendor/README.md` — `vendor/bindjs-apple.patch` is the entire divergence.

@@ -193,35 +193,43 @@ public class BindJSContext: ObservableObject {
 
     // MARK: - Externally Built ASTs
 
-    /// Evaluates a script in the same JavaScript context the runtime lives in.
+    /// The JavaScript context the runtime lives in.
     ///
-    /// This is how a host loads an interpreter that builds trees of its own — an A2UI
-    /// renderer, say. Such an interpreter must share *this* runtime instance: hook state
-    /// and the stored functions a `handlerId` resolves to live there, so a second runtime
-    /// would render correctly and then fail on the first tap.
-    @discardableResult
-    public func evaluate(_ script: String) -> JSValue? {
-        jsContext.evaluateScript(script)
+    /// This is the seam for a host that loads an interpreter building trees of its own — an
+    /// A2UI renderer, say. Such an interpreter must share *this* runtime instance: hook
+    /// state and the stored functions a `handlerId` resolves to live there, so a second
+    /// runtime would render correctly and then fail on the first tap. It is also the only
+    /// way back into Swift, since a tap arrives inside JavaScript with no Swift frame
+    /// beneath it — expose an `@convention(block)` closure here and call it.
+    ///
+    /// The runtime owns the globals it installs (`runtime`, `console`, timers, and the
+    /// callbacks hung off `runtime`). Add to them; do not replace them.
+    public var javaScriptContext: JSContext {
+        jsContext
     }
 
-    /// Exposes a value — typically an `@convention(block)` closure — as a JavaScript global.
+    /// A view for an AST built by an interpreter of the host's own, inside this context.
     ///
-    /// The way an external interpreter calls back into Swift. It cannot reach the host any
-    /// other way: a tap arrives inside the JavaScript context, with no Swift frame below it.
-    public func setGlobal(_ value: Any, forName name: String) {
-        jsContext.setObject(value, forKeyedSubscript: name as NSString)
+    /// `build` runs between the runtime's `willRender` and the decode, which is the only
+    /// ordering that works: `willRender` resets the component-path counters that hook state
+    /// is keyed by, so a tree built before it — or two trees built between it and one
+    /// decode — would bind hooks to the wrong paths. Taking the closure is what keeps that
+    /// unstateable rather than merely documented.
+    ///
+    /// The AST is decoded exactly as one built by `callComponent` is, so handler ids,
+    /// modifiers and `ForEach` behave identically.
+    @ViewBuilder
+    public func view(id: String, buildingAST build: (JSContext) -> JSValue?) -> (some View)? {
+        let _ = runtime.invokeMethod("willRender", withArguments: [])
+
+        if let ast = build(jsContext), let component = component(fromAST: ast) {
+            ComponentView(component)
+                .environmentObject(self)
+                .id(id)
+        }
     }
 
-    /// Prepares the runtime for a render pass.
-    ///
-    /// Call this before an external interpreter builds its tree, so component paths — and
-    /// therefore hook state — line up with the pass that is about to happen.
-    public func willRender() {
-        _ = runtime.invokeMethod("willRender", withArguments: [])
-    }
-
-    /// Builds a component from an AST produced inside this context.
-    public func component(fromAST value: JSValue) -> Component? {
+    private func component(fromAST value: JSValue) -> Component? {
         guard let directive = value.toDirective() else {
             return nil
         }
@@ -231,19 +239,6 @@ public class BindJSContext: ObservableObject {
         }
 
         return resolveForEachChildren(in: component)
-    }
-
-    /// A view for an AST produced inside this context, by an interpreter of the host's own.
-    ///
-    /// The AST is decoded exactly as one built by `callComponent` is, so handler ids,
-    /// modifiers and `ForEach` behave identically.
-    @ViewBuilder
-    public func viewForAST(_ value: JSValue, id: String) -> (some View)? {
-        if let component = component(fromAST: value) {
-            ComponentView(component)
-                .environmentObject(self)
-                .id(id)
-        }
     }
 
     @ViewBuilder

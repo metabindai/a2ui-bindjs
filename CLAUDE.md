@@ -180,11 +180,12 @@ repositories. Turn it on when this one becomes public.
 
 - `ios/packages/a2ui-bindjs-apple` — what would ship: `A2UIHost`, `A2UISurfaceView`, and the
   renderer bundle as a resource. Nothing in it knows about the example.
-- `ios/vendor/bindjs-apple` — a checked-in copy carrying four additive `BindJSContext` methods
-  (`evaluate`, `setGlobal`, `willRender`, `viewForAST`) that are not upstream yet.
-  `ios/vendor/bindjs-apple.patch` is the whole divergence.
+- `ios/vendor/bindjs-apple` — a checked-in copy carrying two additive `BindJSContext`
+  members (`javaScriptContext`, `view(id:buildingAST:)`) that are not upstream yet.
+  `ios/vendor/bindjs-apple.patch` is the whole divergence, and `ios/vendor/README.md` says
+  why it is shaped that way rather than as an injected `JSContext`.
 
-Both go away together: upstream the four methods, then the Apple package takes a repo and a
+Both go away together: upstream the two members, then the Apple package takes a repo and a
 version instead of a path.
 
 `pnpm sync:native` rebuilds `a2ui-native.js` into the

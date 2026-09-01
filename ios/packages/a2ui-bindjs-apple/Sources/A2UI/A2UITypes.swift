@@ -1,8 +1,8 @@
 // The values that cross the boundary.
 //
-// The bridge speaks JSON, because JavaScriptCore converts strings cheaply and
-// unambiguously. These types are where that stops: a host should never have to reach into
-// a dictionary to find out what the user did.
+// JavaScriptCore hands back dictionaries and arrays of `NSNumber`, `NSString` and
+// `NSNull`. These types are where that stops: a host should never have to reach into a
+// dictionary to find out what the user did.
 
 import Foundation
 
@@ -58,30 +58,4 @@ public struct A2UIDiagnostic {
     public var description: String {
         [surfaceId, componentId, message].compactMap { $0 }.joined(separator: " · ")
     }
-}
-
-// MARK: - JSON
-
-/// Quotes a Swift string as a JavaScript literal, escaping included.
-func jsLiteral(_ value: String) -> String {
-    guard
-        let data = try? JSONSerialization.data(withJSONObject: [value], options: []),
-        let array = String(data: data, encoding: .utf8)
-    else {
-        return "\"\""
-    }
-
-    return String(array.dropFirst().dropLast())
-}
-
-/// Encodes a value as a JavaScript literal, including bare numbers, strings and booleans.
-func jsValue(_ value: Any) -> String {
-    guard
-        let data = try? JSONSerialization.data(withJSONObject: value, options: [.fragmentsAllowed]),
-        let json = String(data: data, encoding: .utf8)
-    else {
-        return "null"
-    }
-
-    return json
 }

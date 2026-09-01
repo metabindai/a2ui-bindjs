@@ -24,9 +24,9 @@ so `Package.swift` there declares this library and points its target at `Sources
 .package(url: "https://github.com/metabindai/a2ui-bindjs.git", from: "0.1.0")
 ```
 
-It depends on the vendored `bindjs-apple` by path, because the four `BindJSContext` methods
-it stands on are not upstream yet — see `../../vendor/README.md`. That becomes a versioned
-dependency once they are released.
+It depends on the vendored `bindjs-apple` by path, because the two `BindJSContext` members
+it stands on — `javaScriptContext` and `view(id:buildingAST:)` — are not upstream yet; see
+`../../vendor/README.md`. That becomes a versioned dependency once they are released.
 
 ## The two things a host has to get right
 

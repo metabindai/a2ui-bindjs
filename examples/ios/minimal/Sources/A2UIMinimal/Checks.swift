@@ -7,12 +7,13 @@ import Foundation
 import Combine
 import A2UI
 import BindJS
+import JavaScriptCore
 
 func runChecks() {
     let host = A2UIHost(locale: "en-US")
 
     func evaluate(_ expression: String) -> String {
-        host.context.evaluate(expression)?.toString() ?? "<nil>"
+        host.context.javaScriptContext.evaluateScript(expression)?.toString() ?? "<nil>"
     }
 
     print("1. bridge          ", evaluate("typeof a2ui.render"))
@@ -50,7 +51,7 @@ func runChecks() {
     print("4. handlerId       ", handlerId.isEmpty ? "none" : "found")
 
     // Resolving it in *this* runtime instance is the whole reason the context is shared.
-    host.context.evaluate("runtime.restoreFunction('\(handlerId)')()")
+    host.context.javaScriptContext.evaluateScript("runtime.restoreFunction('\(handlerId)')()")
     RunLoop.main.run(until: Date().addingTimeInterval(0.3))
 
     print("5. action delivered", delivered.first.map { "\($0.name) \($0.contextJSON)" } ?? "NONE")
@@ -59,7 +60,10 @@ func runChecks() {
     host.setValue("Trail Runner X3", surfaceId: "main", path: "/product/name")
     print("6. after setValue  ", evaluate("a2ui.renderJSON('main')").contains("Trail Runner X3") ? "repainted" : "STALE")
 
-    print("7. native decode   ", host.ast(for: "main").flatMap { host.context.component(fromAST: $0) } == nil ? "FAILED" : "ok")
+    // The whole native path, in the shape `A2UISurfaceView` uses it: reset, build, decode.
+    let view = host.context.view(id: "main") { _ in host.ast(for: "main") }
+
+    print("7. native decode   ", view == nil ? "FAILED" : "ok")
     print("8. diagnostics     ", host.diagnostics.isEmpty ? "none" : host.diagnostics.map(\.description).joined(separator: "; "))
 
     // The redraw signal, all the way through. A write into the data model does not touch

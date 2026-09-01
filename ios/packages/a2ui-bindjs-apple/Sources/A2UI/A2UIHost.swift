@@ -18,6 +18,15 @@ public final class A2UIHost: ObservableObject {
     /// The context surfaces are drawn through. Pass in an existing one to share it.
     public let context: BindJSContext
 
+    /// The renderer, held as the JavaScript object it is.
+    ///
+    /// Every call out goes through `invokeMethod` on this rather than through evaluated
+    /// source: arguments cross as values instead of being escaped into a string and
+    /// re-parsed, which is both cheaper per render and one fewer thing to get wrong.
+    ///
+    /// `nil` only when the bundled renderer could not be loaded, which `diagnostics` says.
+    private let bridge: JSValue?
+
     /// Called when a surface dispatches an action, on the main queue.
     ///
     /// This is the agent's half of the conversation: answer it with more A2UI and pass
@@ -35,35 +44,61 @@ public final class A2UIHost: ObservableObject {
     ///   - timeZone: IANA identifier used by the date functions. Defaults to the device's.
     public init(context: BindJSContext = BindJSContext(), locale: String? = nil, timeZone: String? = nil) {
         self.context = context
+        self.bridge = Self.loadRenderer(into: context.javaScriptContext)
 
-        attachRenderer(locale: locale ?? Locale.current.identifier, timeZone: timeZone ?? TimeZone.current.identifier)
-        observeSurfaces()
-        forwardActions()
-    }
-
-    /// Loads the renderer into the context the runtime already lives in, and attaches it
-    /// to that runtime.
-    ///
-    /// `runtime` is the JavaScript global `BindJSRuntimeWrapper.js` defines — the instance
-    /// `BindJSContext` itself calls `callComponent` on.
-    private func attachRenderer(locale: String, timeZone: String) {
-        guard
-            let url = Bundle.module.url(forResource: "a2ui-native", withExtension: "js"),
-            let source = try? String(contentsOf: url, encoding: .utf8)
-        else {
+        guard let bridge else {
             diagnostics = [A2UIDiagnostic(surfaceId: "", componentId: nil, message: "The A2UI renderer bundle is missing from the package.")]
             return
         }
 
-        context.evaluate(source)
-        context.evaluate("a2ui.attach(runtime, { locale: \(jsLiteral(locale)), timeZone: \(jsLiteral(timeZone)) })")
+        attach(bridge, locale: locale ?? Locale.current.identifier, timeZone: timeZone ?? TimeZone.current.identifier)
+        observeSurfaces(bridge)
+        forwardActions(bridge)
+    }
+
+    /// Loads the renderer into the context the runtime already lives in.
+    ///
+    /// It installs itself as the global `a2ui`, which is what comes back.
+    private static func loadRenderer(into jsContext: JSContext) -> JSValue? {
+        guard
+            let url = Bundle.module.url(forResource: "a2ui-native", withExtension: "js"),
+            let source = try? String(contentsOf: url, encoding: .utf8)
+        else {
+            return nil
+        }
+
+        jsContext.evaluateScript(source)
+
+        guard let bridge = jsContext.objectForKeyedSubscript("a2ui"), !bridge.isUndefined, !bridge.isNull else {
+            return nil
+        }
+
+        return bridge
+    }
+
+    /// Points the renderer at the host's runtime.
+    ///
+    /// Fetched by evaluating its name, not by `objectForKeyedSubscript`: it is a `const` in
+    /// `BindJSRuntimeWrapper.js`, so it lives in the global *lexical* environment and is not
+    /// a property of `globalThis` — a subscript lookup comes back `undefined`.
+    ///
+    /// It is also not the same object as the `runtime` `BindJSContext` holds. That one is
+    /// the wrapper's facade (`setComponents`, `callComponent`, `willRender`); this is the
+    /// `BindJSRuntime` beneath it, which is what has `registerComponent` for the catalog.
+    private func attach(_ bridge: JSValue, locale: String, timeZone: String) {
+        guard let runtime = context.javaScriptContext.evaluateScript("runtime"), runtime.isObject else {
+            diagnostics = [A2UIDiagnostic(surfaceId: "", componentId: nil, message: "The BindJS runtime is missing from the context.")]
+            return
+        }
+
+        bridge.invokeMethod("attach", withArguments: [runtime, ["locale": locale, "timeZone": timeZone]])
     }
 
     // MARK: - Messages in
 
     /// Applies one agent message or an array of them, as JSON.
     public func apply(_ messages: String) {
-        context.evaluate("a2ui.applyMessages(\(jsLiteral(messages)))")
+        bridge?.invokeMethod("applyMessages", withArguments: [messages])
 
         // Not `objectWillChange` here: the store's own notification covers it.
         collectDiagnostics()
@@ -71,29 +106,28 @@ public final class A2UIHost: ObservableObject {
 
     /// Writes into the data model, as a two-way bound control would.
     public func setValue(_ value: Any, surfaceId: String, path: String) {
-        context.evaluate("a2ui.setValue(\(jsLiteral(surfaceId)), \(jsLiteral(path)), \(jsValue(value)))")
+        bridge?.invokeMethod("setValue", withArguments: [surfaceId, path, value])
     }
 
     /// Drops every surface and starts over.
     public func reset() {
-        context.evaluate("a2ui.reset()")
+        bridge?.invokeMethod("reset", withArguments: [])
         collectDiagnostics()
     }
 
     public var surfaceIds: [String] {
-        context.evaluate("a2ui.surfaceIds()")?.toArray() as? [String] ?? []
+        bridge?.invokeMethod("surfaceIds", withArguments: [])?.toArray() as? [String] ?? []
     }
 
     // MARK: - Rendering
 
-    /// Builds the AST for a surface, ready for `A2UISurfaceView` to decode.
+    /// Builds the AST for a surface.
     ///
-    /// `willRender` first: it resets the runtime's component-path counters so hook state
-    /// lines up with the pass about to happen, exactly as `viewForName` does.
+    /// Call it inside `BindJSContext.view(id:buildingAST:)` and nowhere else: the runtime's
+    /// component-path counters have to be reset immediately before this and the tree
+    /// decoded immediately after, and that method is what holds the three together.
     public func ast(for surfaceId: String) -> JSValue? {
-        context.willRender()
-
-        guard let result = context.evaluate("a2ui.render(\(jsLiteral(surfaceId)))") else {
+        guard let result = bridge?.invokeMethod("render", withArguments: [surfaceId]) else {
             return nil
         }
 
@@ -113,12 +147,9 @@ public final class A2UIHost: ObservableObject {
         var collected: [A2UIDiagnostic] = []
 
         for surfaceId in surfaceIds {
-            let json = context.evaluate("JSON.stringify(a2ui.render(\(jsLiteral(surfaceId))).diagnostics)")
-
             guard
-                let text = json?.toString(),
-                let data = text.data(using: .utf8),
-                let entries = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]
+                let result = bridge?.invokeMethod("render", withArguments: [surfaceId]),
+                let entries = result.forProperty("diagnostics")?.toArray() as? [[String: Any]]
             else {
                 continue
             }
@@ -147,15 +178,14 @@ public final class A2UIHost: ObservableObject {
     /// the screen keeps showing the tree it drew first.
     ///
     /// `useA2UIStore` is the web equivalent, via `useSyncExternalStore`.
-    private func observeSurfaces() {
+    private func observeSurfaces(_ bridge: JSValue) {
         let changed: @convention(block) () -> Void = { [weak self] in
             DispatchQueue.main.async {
                 self?.objectWillChange.send()
             }
         }
 
-        context.setGlobal(changed, forName: "a2uiSurfacesChanged")
-        context.evaluate("a2ui.onChange(() => a2uiSurfacesChanged())")
+        bridge.invokeMethod("onChange", withArguments: [changed])
     }
 
     /// Delivers actions as they are dispatched.
@@ -163,24 +193,18 @@ public final class A2UIHost: ObservableObject {
     /// A tap happens inside JavaScript with no Swift frame beneath it to return into, so
     /// the bridge queues actions and calls back when one arrives. Polling would not do: an
     /// action need not change the data model, so there may be no redraw to notice it on.
-    private func forwardActions() {
+    private func forwardActions(_ bridge: JSValue) {
         let pending: @convention(block) () -> Void = { [weak self] in
             DispatchQueue.main.async {
                 self?.deliverActions()
             }
         }
 
-        context.setGlobal(pending, forName: "a2uiActionsPending")
-        context.evaluate("a2ui.onActions(() => a2uiActionsPending())")
+        bridge.invokeMethod("onActions", withArguments: [pending])
     }
 
     private func deliverActions() {
-        let json = context.evaluate("a2ui.takeActionsJSON()")?.toString() ?? "[]"
-
-        guard
-            let data = json.data(using: .utf8),
-            let entries = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]
-        else {
+        guard let entries = bridge?.invokeMethod("takeActions", withArguments: [])?.toArray() as? [[String: Any]] else {
             return
         }
 

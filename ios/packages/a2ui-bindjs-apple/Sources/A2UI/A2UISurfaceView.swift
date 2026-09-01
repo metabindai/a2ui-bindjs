@@ -23,9 +23,13 @@ public struct A2UISurfaceView: View {
         self.surfaceId = surfaceId
     }
 
+    /// The AST is built inside `view(id:buildingAST:)` rather than before it, because the
+    /// runtime resets the component-path counters that hook state is keyed by on the way
+    /// in — building the tree anywhere else binds this pass's hooks to the last pass's
+    /// paths.
     public var body: some View {
-        if let id = surfaceId ?? host.surfaceIds.first, let ast = host.ast(for: id) {
-            context.viewForAST(ast, id: id)
+        if let id = surfaceId ?? host.surfaceIds.first {
+            context.view(id: id) { _ in host.ast(for: id) }
         }
     }
 }

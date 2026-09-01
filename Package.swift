@@ -8,7 +8,7 @@ import PackageDescription
 //
 // The sources live under `ios/`, and the JavaScript renderer travels with them as a
 // resource. `bindjs-apple` is a path dependency on the vendored copy for now; it becomes a
-// versioned one once the four `BindJSContext` methods it needs are released.
+// versioned one once the two `BindJSContext` members it needs are released.
 let package = Package(
     name: "a2ui-bindjs",
     platforms: [.macOS(.v14), .iOS(.v17)],
