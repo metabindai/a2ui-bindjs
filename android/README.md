@@ -113,3 +113,8 @@ representation or a prop is missing from the Kotlin model. They are copied out o
 
 Both have to be instrumented tests — `JavaScriptSandbox` is served by the system WebView,
 so there is no Robolectric shadow of it that would mean anything.
+
+**Neither runs in CI at the moment.** The emulator step never finished booting on the
+hosted runner and is commented out in `.github/workflows/ci.yml`, so CI proves the Android
+side compiles and nothing more. Run `pnpm check:android` against a device or emulator
+before changing anything the bridge touches.
