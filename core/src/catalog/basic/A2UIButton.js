@@ -1,11 +1,19 @@
 // A2UI Basic Catalog → BindJS: `Button`
 //
-// A2UI props: child (required label), variant, plus an `action` on the node.
+// A2UI props: child (required label), variant, checks, plus an `action` on the node.
 //
 // The engine resolves the A2UI action — event name, resolved context, any local
 // functionCall — into a single `props.action` callback, so nothing about the wire
 // protocol reaches this component. Dispatch is the engine's job; this file is only
 // about how a button looks and that it is tappable.
+//
+// `checks` is how an agent gates a submit on the form being valid: each rule's
+// `condition` is resolved by the engine to a boolean, and a failing rule disables the
+// button rather than showing a message — the message belongs to the input it is about.
+
+/** A rule the engine resolved to `false`; anything else is valid or not a rule at all. */
+const failedChecks = (checks) =>
+    (Array.isArray(checks) ? checks : []).filter((rule) => rule && typeof rule === "object" && rule.condition === false)
 
 export default defineComponent({
     metadata: {
@@ -23,7 +31,7 @@ export default defineComponent({
         // `properties.defaultValue` is inspector metadata and is NOT applied at runtime,
         // so an omitted `enabled` arrives as undefined — compare against false, because
         // `!undefined` would disable every button that never set the prop.
-        const enabled = props.enabled !== false
+        const enabled = props.enabled !== false && failedChecks(props.checks).length === 0
         const action = typeof props.action === "function" ? props.action : () => {}
         const label = children && children.length > 0 ? HStack({ spacing: 6 }, children) : Text("Button")
 
@@ -54,5 +62,8 @@ export default defineComponent({
         Self({}, [Text("Cancel")]).previewName("Default"),
         Self({ variant: "borderless" }, [Text("Learn more")]).previewName("Borderless"),
         Self({ variant: "primary", enabled: false }, [Text("Unavailable")]).previewName("Disabled"),
+        Self({ variant: "primary", checks: [{ condition: false, message: "Fill in the form first" }] }, [Text("Submit")]).previewName(
+            "Gated by a check"
+        ),
     ],
 });
