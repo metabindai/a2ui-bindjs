@@ -128,3 +128,64 @@ jobs:
             - name: Run the headless checks
               timeout-minutes: 5
               run: swift run --package-path examples/ios/minimal A2UIMinimal --check
+
+    android:
+        name: android
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: pnpm/action-setup@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: pnpm
+
+            - uses: actions/setup-java@v4
+              with:
+                  distribution: temurin
+                  java-version: 21
+
+            - uses: android-actions/setup-android@v3
+
+            - run: pnpm install --frozen-lockfile
+
+            # Same rule as the Apple bundle: generated but committed, so the library
+            # builds without a JavaScript toolchain. That only holds if it is current.
+            - name: The committed renderer bundle is up to date
+              run: |
+                  pnpm sync:native:android
+                  git diff --exit-code -- android/packages/a2ui-bindjs-android/src/main/res/raw/a2ui_native.js
+
+            # bindjs-android lives in GitHub Packages, which needs a token even to read.
+            - name: Build the library and the example
+              working-directory: android
+              env:
+                  GITHUB_ACTOR: ${{ github.actor }}
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: ./gradlew :a2ui:assembleDebug :minimal:assembleDebug
+
+            # `JavaScriptSandbox` is served by the system WebView, so the bridge can only
+            # be exercised on a device — there is no Robolectric shadow of it that would
+            # mean anything. This is the counterpart of the iOS `--check` step.
+            - name: Enable KVM
+              run: |
+                  echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+                    | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+                  sudo udevadm control --reload-rules
+                  sudo udevadm trigger --name-match=kvm
+
+            - name: Run the bridge checks on an emulator
+              uses: reactivecircus/android-emulator-runner@v2
+              timeout-minutes: 30
+              env:
+                  GITHUB_ACTOR: ${{ github.actor }}
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                  api-level: 35
+                  target: google_apis
+                  arch: x86_64
+                  working-directory: android
+                  script: ./gradlew :a2ui:connectedDebugAndroidTest

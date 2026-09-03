@@ -6,7 +6,7 @@ Guidance for AI agents contributing to this repo.
 
 An A2UI (Agent-to-UI protocol) renderer built on BindJS. The top level splits by platform:
 `vendor/spec/` (the protocol, vendored verbatim), `core/` (`@metabindai/a2ui-bindjs` — protocol,
-store, functions, engine, catalog), `react/` (`@metabindai/a2ui-bindjs-react`), `ios/` (Swift), `android/` (coming soon), plus `examples/`. The metabind example calls the Metabind API directly from
+store, functions, engine, catalog), `react/` (`@metabindai/a2ui-bindjs-react`), `ios/` (Swift), `android/` (Kotlin), plus `examples/`. The metabind example calls the Metabind API directly from
 `src/metabindApi.ts` — one query and one header did not justify a client library. The
 prototype SDK that used to live here now sits beside the repo at `../metabind-sdk`,
 undeployed; its `TODO.md` says what would have to happen first. It consumes the published `@metabindai/bindjs-runtime` and `@metabindai/bindjs-react` packages (sibling repo `../bindjs`); it does not modify them.
@@ -52,6 +52,9 @@ Two suites, both run by `pnpm test`:
 
 - `core/tests/conformance.test.ts` — the 43 official spec examples, each validated against
   the schemas and rendered through the catalog.
+- `android/packages/a2ui-bindjs-android/src/androidTest/…/SpecExamplesTest.kt` — the same
+  43 examples again, but rendered through the sandbox into a decoded Compose tree. Node
+  proves the engine; this proves the crossing. It needs a device.
 - `core/tests/conformance.suite.test.ts` — the official language-agnostic YAML suite,
   vendored in `vendor/conformance/`. It stands at 20 passed, 0 gaps, 53 out of scope of 73
   cases; the out-of-scope ones are v0.8 payloads and agent-SDK catalog operations.
@@ -89,9 +92,22 @@ tests can see — a layout's props-form requiring a literal `Component[]`, for i
 which is valid JavaScript, renders fine here, and is rejected on push. It skips cleanly
 when the CLI is not installed.
 
-Run `pnpm sync:native` too. The renderer bundle the Apple package ships is generated from
-these sources and committed, so editing one without regenerating leaves the native side on
-the previous version — CI fails on exactly that.
+Run `pnpm sync:native` and `pnpm sync:native:android` too. The renderer bundle each
+native package ships is generated from these sources and committed, so editing one without
+regenerating leaves that platform on the previous version — CI fails on exactly that. The
+two bundles are byte-identical; only the file name differs, because `res/raw` names may
+not contain a hyphen.
+
+Two traps live at the boundary and neither shows up on the web:
+
+- **`Infinity` has no JSON.** `JSON.stringify({ maxWidth: Infinity })` emits `null`, which
+  the Kotlin side reads as a `Float` and throws on. BindJS ships `customJSONStringify`,
+  which writes the string `"Infinity"` and decodes it back — every AST crossing to Android
+  must go through it. Half the catalog carries `.frame({ maxWidth: Infinity })`, so this
+  is every surface rather than an edge case.
+- **A prop the native renderer never decodes is invisible**, the same way an undeclared
+  catalog property is. `A2UICheckBox` drew as an unexplained switch on Android for exactly
+  that reason: `ToggleComponentProps` had no `label` field, so Gson dropped it.
 
 `src/catalog/basic/*.js` are real BindJS sources, edited on disk. `pnpm build:catalog`
 (also run by `build` and `test`) inlines them into `src/catalog/basic/sources.generated.ts`
@@ -174,7 +190,7 @@ repositories. Turn it on when this one becomes public.
   `pnpm --filter @metabindai/a2ui-bindjs-playground dev` on `:5181`; it reads `core/dist` and `react/dist`, so
   `pnpm build` after library changes.
 
-## The native example
+## The native examples
 
 `examples/ios/minimal` is a SwiftUI app drawing an agent-authored surface. It depends on two packages under `ios/`:
 
@@ -200,6 +216,37 @@ the value — so the runtime never marks itself dirty and `BindJSContext` publis
 `a2ui.onChange(cb)` is the native equivalent of `useA2UIStore`'s `useSyncExternalStore`.
 Without it the store updates correctly and the screen keeps showing the tree it drew first.
 `swift run A2UIMinimal --check` step 12 asserts the whole chain.
+
+### Android
+
+`examples/android/minimal` is the same surface, message for message, on Compose. Its
+Gradle build lives in `android/settings.gradle.kts` — one wrapper for the platform —
+alongside `android/packages/a2ui-bindjs-android` (`A2UIHost`, `A2UISurfaceView`, and the
+bundle as `res/raw/a2ui_native.js`). There is no vendored copy of `bindjs-android`: the
+two members it needs are upstream, so it resolves the published artifact, `mavenLocal()`
+first, with an `includeBuild` in the settings file to uncomment for local work.
+
+The engine is the difference worth knowing. `bindjs-apple` embeds JavaScriptCore
+in-process with real interop; `bindjs-android` runs `androidx.javascriptengine`, an
+out-of-process sandbox where Kotlin sends a script and gets a string back, and nothing
+else crosses. So:
+
+- **Everything suspends**, and `A2UISurfaceView` holds its tree in state rather than
+  building it in its body. The first render waits on the sandbox process starting and
+  ~120 KB of bundle evaluating, which is what `placeholder` is for.
+- **Actions are drained, not pushed.** Every way into the runtime is host-initiated, so a
+  tap arrives as `A2UIHost.dispatch` and the queue is drained when it returns. The Apple
+  side needs `onActions` because a tap there has no Swift frame beneath it.
+- **The AST crosses as JSON through `customJSONStringify`**, never `JSON.stringify` — see
+  the `Infinity` note under *Catalog components*.
+- `JsRuntime.evaluate` and `JsRuntime.renderExternal` are the Android counterparts of
+  `javaScriptContext` and `view(id:buildingAST:)`, and `renderExternal` exists for the
+  same reason: it holds `willRender` and the build under one lock so this pass's hooks
+  cannot bind to the last pass's paths.
+
+`pnpm sync:native:android` rebuilds the bundle. `./gradlew :a2ui:connectedDebugAndroidTest`
+from `android/` is the counterpart of `--check`, and has to run on a device:
+`JavaScriptSandbox` is served by the system WebView, so Robolectric has nothing to shadow.
 
 `examples/ios/minimal/A2UIMinimal.xcodeproj` is generated from `project.yml` by `xcodegen` and
 checked in, so the example opens and runs without tooling; `a2ui-native.js` is committed

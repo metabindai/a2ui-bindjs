@@ -40,6 +40,10 @@ export async function buildBundle({ write = true, entry = 'index' } = {}) {
 
     const result = await esbuild.build({
         entryPoints: [entryPoint],
+        // Pinned so the output does not depend on where the script was invoked from:
+        // esbuild writes each input's path into a comment, relative to its working
+        // directory, and CI asserts the committed bundle is byte-identical.
+        absWorkingDir: packageRoot,
         bundle: true,
         format: 'iife',
         globalName: 'A2UI',
@@ -52,6 +56,7 @@ export async function buildBundle({ write = true, entry = 'index' } = {}) {
 
     const minified = await esbuild.build({
         entryPoints: [entryPoint],
+        absWorkingDir: packageRoot,
         bundle: true,
         format: 'iife',
         globalName: 'A2UI',
