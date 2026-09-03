@@ -5,6 +5,8 @@
 
 const ALIGNMENT = { start: "leading", center: "center", end: "trailing", stretch: "leading" }
 
+const interleave = (items) => items.flatMap((child, index) => (index === 0 ? [child] : [Spacer(), child]))
+
 export default defineComponent({
     metadata: {
         title: "A2UIColumn",
@@ -13,12 +15,18 @@ export default defineComponent({
     },
 
     properties: {
-        justify: { type: "enum", options: ["start", "center", "end", "spaceBetween"], defaultValue: "start" },
+        justify: {
+            type: "enum",
+            options: ["start", "center", "end", "spaceBetween", "spaceAround", "spaceEvenly", "stretch"],
+            defaultValue: "start",
+        },
         align: { type: "enum", options: ["start", "center", "end", "stretch"], defaultValue: "start" },
         spacing: { type: "number", defaultValue: 12 },
     },
 
     body: (props, children) => {
+        const justify = props.justify ?? "start"
+
         // `weight` lets a child claim proportional space. Only the engine can see each
         // child node's weight, so it passes them down as `childWeights`.
         const weights = Array.isArray(props.childWeights) ? props.childWeights : []
@@ -26,13 +34,16 @@ export default defineComponent({
         const items = (children ?? []).map((child, index) => {
             const weight = weights[index]
 
-            if (typeof weight !== "number" || weight <= 0) {
-                return child
+            if (typeof weight === "number" && weight > 0) {
+                return child.frame({ maxHeight: Infinity }).layoutPriority(weight)
             }
 
-            return child.frame({ maxWidth: Infinity }).layoutPriority(weight)
+            if (justify === "stretch") {
+                return child.frame({ maxHeight: Infinity })
+            }
+
+            return child
         })
-        const justify = props.justify ?? "start"
 
         let laidOut = items
 
@@ -41,10 +52,16 @@ export default defineComponent({
         } else if (justify === "end") {
             laidOut = [Spacer(), ...items]
         } else if (justify === "spaceBetween") {
-            laidOut = items.flatMap((child, index) => (index === 0 ? [child] : [Spacer(), child]))
+            laidOut = interleave(items)
+        } else if (justify === "spaceAround" || justify === "spaceEvenly") {
+            laidOut = [Spacer(), ...interleave(items), Spacer()]
         }
 
-        return VStack({ spacing: props.spacing ?? 12, alignment: ALIGNMENT[props.align] || "leading" }, laidOut)
+        // Distributed layouts own their gaps; a stack spacing on top would double them.
+        const distributed = justify === "spaceBetween" || justify === "spaceAround" || justify === "spaceEvenly"
+        const spacing = distributed ? 0 : (props.spacing ?? 12)
+
+        return VStack({ spacing, alignment: ALIGNMENT[props.align] || "leading" }, laidOut)
             .frame({ maxWidth: Infinity, alignment: "leading" })
     },
 

@@ -42,11 +42,12 @@ export const BASIC_CATALOG_IDS: readonly string[] = [BASIC_CATALOG_ID, BASIC_CAT
 /**
  * Component types whose BindJS implementation holds its own state.
  *
- * The v1.0 basic catalog gives `Tabs` no property for the selected tab and `Modal` none
- * for open state, so both are renderer state by definition — which also means their
- * output can change with no A2UI input changing, and they must not be memoised.
+ * The v1.0 basic catalog gives `Tabs` no property for the selected tab, `Modal` none for
+ * open state, and `ChoicePicker` none for the text typed into its `filterable` search
+ * field, so all three are renderer state by definition — which also means their output
+ * can change with no A2UI input changing, and they must not be memoised.
  */
-const STATEFUL_TYPES = new Set(['Modal', 'Tabs'])
+const STATEFUL_TYPES = new Set(['ChoicePicker', 'Modal', 'Tabs'])
 
 export const BASIC_CATALOG: Catalog = Object.fromEntries(
     BASIC_CATALOG_COMPONENTS.map((type) => [
