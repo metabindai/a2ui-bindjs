@@ -1,0 +1,44 @@
+[versions]
+# AGP and Kotlin match bindjs-android exactly. Gradle refuses two AGP versions in one
+# build, and the `includeBuild` in settings.gradle.kts composes that build into this one
+# as soon as anybody uncomments it. Kotlin is held at 2.3.10 there for a Hilt metadata
+# ceiling — see the note in bindjs-android's catalog before raising either.
+agp = "9.3.1"
+kotlin = "2.3.10"
+
+android-compile-sdk = "36"
+android-min-sdk = "26"
+
+# The bindjs-android carrying `JsRuntime.evaluate` and `JsRuntime.renderExternal`, which
+# this package is built on. Nothing older can host an A2UI surface.
+bindjs = "0.0.30"
+
+androidx-core-ktx = "1.18.0"
+androidx-activity-compose = "1.13.0"
+android-compose = "1.11.4"
+android-compose-material3 = "1.4.0"
+coroutines = "1.11.0"
+
+androidx-test-junit = "1.2.1"
+androidx-test-runner = "1.6.2"
+junit = "4.13.2"
+
+[libraries]
+bindjs = { module = "ai.metabind:bindjs-android", version.ref = "bindjs" }
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidx-core-ktx" }
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity-compose" }
+android-compose-ui = { module = "androidx.compose.ui:ui", version.ref = "android-compose" }
+android-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "android-compose" }
+android-compose-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "android-compose" }
+android-compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "android-compose-material3" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+
+junit = { module = "junit:junit", version.ref = "junit" }
+androidx-test-junit = { module = "androidx.test.ext:junit", version.ref = "androidx-test-junit" }
+androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidx-test-runner" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
