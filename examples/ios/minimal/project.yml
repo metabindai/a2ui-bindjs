@@ -13,7 +13,7 @@ options:
 
 packages:
     # The repository root, whose Package.swift declares the A2UI library. It carries the
-    # renderer bundle as a resource and depends on the vendored `bindjs-apple` itself.
+    # renderer bundle as a resource and depends on `bindjs-apple` by version.
     A2UI:
         path: ../../..
 
