@@ -1,6 +1,15 @@
 {
   "pins" : [
     {
+      "identity" : "bindjs-apple",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/metabindai/bindjs-apple.git",
+      "state" : {
+        "revision" : "bd37aa90d598efe6d40e20087864b1c2339cc1d0",
+        "version" : "1.2.0"
+      }
+    },
+    {
       "identity" : "gltfkit2",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/warrenm/GLTFKit2",
