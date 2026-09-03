@@ -7,8 +7,8 @@ import PackageDescription
 //     .package(url: "https://github.com/metabindai/a2ui-bindjs.git", from: "0.1.0")
 //
 // The sources live under `ios/`, and the JavaScript renderer travels with them as a
-// resource. `bindjs-apple` is a path dependency on the vendored copy for now; it becomes a
-// versioned one once the two `BindJSContext` members it needs are released.
+// resource. `bindjs-apple` 1.2.0 is the first release with the two `BindJSContext` members
+// the library stands on: `javaScriptContext` and `view(id:buildingAST:)`.
 let package = Package(
     name: "a2ui-bindjs",
     platforms: [.macOS(.v14), .iOS(.v17)],
@@ -16,7 +16,7 @@ let package = Package(
         .library(name: "A2UI", targets: ["A2UI"])
     ],
     dependencies: [
-        .package(path: "ios/vendor/bindjs-apple")
+        .package(url: "https://github.com/metabindai/bindjs-apple.git", from: "1.2.0")
     ],
     targets: [
         .target(

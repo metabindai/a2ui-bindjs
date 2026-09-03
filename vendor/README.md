@@ -10,9 +10,6 @@ where it came from and why it is here rather than being a dependency.
 
 Both are Apache-2.0, as is this repository.
 
-`ios/vendor/bindjs-apple` follows the same rule for a different reason — it carries four
-additive `BindJSContext` methods that are not upstream yet, and goes away once they are.
-
 ## Updating
 
 Re-copy from upstream and run `pnpm test`. Anything that changes shape will fail loudly:

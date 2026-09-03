@@ -176,17 +176,13 @@ repositories. Turn it on when this one becomes public.
 
 ## The native example
 
-`examples/ios/minimal` is a SwiftUI app drawing an agent-authored surface. It depends on two packages under `ios/`:
-
-- `ios/packages/a2ui-bindjs-apple` — what would ship: `A2UIHost`, `A2UISurfaceView`, and the
-  renderer bundle as a resource. Nothing in it knows about the example.
-- `ios/vendor/bindjs-apple` — a checked-in copy carrying two additive `BindJSContext`
-  members (`javaScriptContext`, `view(id:buildingAST:)`) that are not upstream yet.
-  `ios/vendor/bindjs-apple.patch` is the whole divergence, and `ios/vendor/README.md` says
-  why it is shaped that way rather than as an injected `JSContext`.
-
-Both go away together: upstream the two members, then the Apple package takes a repo and a
-version instead of a path.
+`examples/ios/minimal` is a SwiftUI app drawing an agent-authored surface. It depends on
+`ios/packages/a2ui-bindjs-apple` — what would ship: `A2UIHost`, `A2UISurfaceView`, and the
+renderer bundle as a resource. Nothing in it knows about the example. The root
+`Package.swift` is that package's manifest, and it takes `bindjs-apple` by version: the two
+`BindJSContext` members the library stands on (`javaScriptContext`,
+`view(id:buildingAST:)`) shipped upstream in 1.2.0. `ios/packages/a2ui-bindjs-apple/README.md`
+says why they are shaped that way rather than as an injected `JSContext`.
 
 `pnpm sync:native` rebuilds `a2ui-native.js` into the
 Apple package's resources. It does **not** copy `BindJSRuntime.js`: the host already ships one, and

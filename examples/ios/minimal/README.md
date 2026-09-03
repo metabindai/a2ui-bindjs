@@ -25,7 +25,6 @@ pnpm sync:native
 
 ```
 packages/a2ui-bindjs-apple   what would ship — A2UIHost, A2UISurfaceView, the renderer
-vendor/bindjs-apple          checked in until the API it needs is released
 Sources/A2UIMinimal          the app: chrome, the agent's messages, a smoke test
 ```
 
@@ -78,13 +77,7 @@ so it arrives as a real segmented control.
 
 ## Packaging
 
-`packages/a2ui-bindjs-apple` is a local package rather than a repo of its own because it
-depends on `BindJSContext` methods that are not upstream yet. SwiftPM cannot address a
-package in a subdirectory by URL, so shipping it means its own repo — at which point the
-path dependency below it becomes a versioned one and nothing else changes.
-
-## `vendor/`
-
-`bindjs-apple` is checked in rather than referenced by version, so this example can be
-shared before the two `BindJSContext` members it needs are released. See
-`vendor/README.md` — `vendor/bindjs-apple.patch` is the entire divergence.
+`packages/a2ui-bindjs-apple` has no manifest of its own: SwiftPM cannot address a package
+in a subdirectory by URL, so the repository's root `Package.swift` declares the library and
+points its target at these sources. This example depends on that root by path, and the
+library depends on `bindjs-apple` by version.
