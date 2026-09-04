@@ -7,6 +7,8 @@ else, so one can be copied out without dragging the others along.
 | Example    | What it shows                                                                        |
 | ---------- | ------------------------------------------------------------------------------------ |
 | `minimal/` | One agent-authored surface: bindings, functions, two-way controls, an action round trip |
+| `catalog/` | Every basic-catalog component on its own screen, each a real A2UI surface: icon names, image variants, justify values, checks, filterable pickers |
+| `custom-catalog/` | The app's own BindJS component named by the agent, plus two overrides — the web example's sources, unchanged |
 
 ```sh
 cd minimal

@@ -1,0 +1,33 @@
+{
+  "originHash" : "5817776529bf2dc80b87548f714976c08ca4bad58c6deec7b7d54f9d095bd140",
+  "pins" : [
+    {
+      "identity" : "bindjs-apple",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/metabindai/bindjs-apple.git",
+      "state" : {
+        "revision" : "d236afad44f0eb12d6326fb690cc601521e65003",
+        "version" : "1.2.0"
+      }
+    },
+    {
+      "identity" : "gltfkit2",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/warrenm/GLTFKit2",
+      "state" : {
+        "revision" : "c4509232470777e51ecffa626597ff9b4da170f5",
+        "version" : "0.5.14"
+      }
+    },
+    {
+      "identity" : "svgview",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/yapstudios/SVGView.git",
+      "state" : {
+        "revision" : "5266e544b93ce541b195d21be3a917f7d5fcbc87",
+        "version" : "1.0.7"
+      }
+    }
+  ],
+  "version" : 3
+}

@@ -50,8 +50,9 @@ ids in properties it does not know about, neither produced a diagnostic.
 
 Two suites, both run by `pnpm test`:
 
-- `core/tests/conformance.test.ts` — the 43 official spec examples, each validated against
-  the schemas and rendered through the catalog.
+- `core/tests/conformance.test.ts` — the 43 official v1.0 spec examples, each validated
+  against the schemas and rendered through the catalog, plus the 43 v0.9 examples rendered
+  (not validated: their schemas are not vendored).
 - `android/packages/a2ui-bindjs-android/src/androidTest/…/SpecExamplesTest.kt` — the same
   43 examples again, but rendered through the sandbox into a decoded Compose tree. Node
   proves the engine; this proves the crossing. It needs a device.
@@ -201,7 +202,8 @@ renderer bundle as a resource. Nothing in it knows about the example. The root
 says why they are shaped that way rather than as an injected `JSContext`.
 
 `pnpm sync:native` rebuilds `a2ui-native.js` into the
-Apple package's resources. It does **not** copy `BindJSRuntime.js`: the host already ships one, and
+Apple package's resources, and regenerates `examples/ios/catalog`'s embedded copy of the 43
+spec examples. It does **not** copy `BindJSRuntime.js`: the host already ships one, and
 there must only be one — a `handlerId` resolves against the instance that stored it, and
 hook state is keyed by path within that instance. `swift run A2UIMinimal --check` runs the
 bridge headlessly, which distinguishes a broken bundle from a broken layout.
@@ -264,6 +266,11 @@ every render and throw away memoised subtrees.
 Pass a `runtime` instead only when you have other BindJS components to register, or several
 renderers that should share hook state. `examples/web/custom-catalog` shows the short way;
 `react/src/runtime.ts` still exports `createA2UIRuntime` for the long one.
+
+Natively it is `host.useCatalog(sources:catalog:)`, before the first surface arrives. The
+bridge merges `catalog` over the basic one, so a host names only the entries it adds or
+replaces. The same call adds a type the basic catalog lacks — `examples/ios/custom-catalog`
+and the web example register a `Rating` from one shared source.
 
 ## Rendering defaults
 

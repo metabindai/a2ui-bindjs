@@ -45,7 +45,7 @@
         "build:catalog": "node scripts/build-catalog.mjs",
         "build:bundle": "node scripts/build-catalog.mjs && node scripts/build-bundle.mjs",
         "validate:catalog": "node scripts/validate-catalog.mjs",
-        "sync:native": "node scripts/build-catalog.mjs && node scripts/sync-native.mjs",
+        "sync:native": "node scripts/build-catalog.mjs && node scripts/sync-native.mjs && node scripts/sync-spec-examples.mjs",
         "sync:native:android": "node scripts/build-catalog.mjs && node scripts/sync-native.mjs android/packages/a2ui-bindjs-android/src/main/res/raw a2ui_native.js"
     },
     "peerDependencies": {
