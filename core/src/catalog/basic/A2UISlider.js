@@ -1,8 +1,13 @@
 // A2UI Basic Catalog → BindJS: `Slider`
 //
-// A2UI props: label, value (two-way bound number), min, max, step.
-// BindJS's Slider callback is already named `setValue`, which is exactly what the
-// engine injects for a path-bound `value`.
+// A2UI props: label, value (two-way bound number), min, max, steps, checks.
+//
+// `steps` is the number of discrete divisions across the range, not the size of one —
+// so the step size is derived here. BindJS's Slider callback is already named `setValue`,
+// which is exactly what the engine injects for a path-bound `value`.
+//
+// The current value is shown beside the label, as the official SwiftUI catalog does: a
+// slider with no readout tells the user where the thumb is and nothing else.
 
 /**
  * A2UI's DynamicString resolves to whatever the data model holds, so a binding can arrive
@@ -10,6 +15,23 @@
  * takes out the whole surface - bindjs-react's ErrorBoundary renders an empty div.
  */
 const asText = (value) => (value === null || value === undefined ? "" : String(value))
+
+/**
+ * A rule's `condition` arrives one of two ways: a boolean, when it was a binding or a logic
+ * function, or a `{ valid, message }` result from a validation function such as
+ * `required` or `email`. Either spelling of failure counts, and the rule's own message
+ * wins over the function's.
+ */
+const isFailure = (condition) =>
+    condition === false || (condition !== null && typeof condition === "object" && condition.valid === false)
+
+const failedChecks = (checks) =>
+    (Array.isArray(checks) ? checks : [])
+        .filter((rule) => rule && typeof rule === "object" && isFailure(rule.condition))
+        .map((rule) => ({ message: rule.message ?? (rule.condition && rule.condition.message) ?? "Invalid" }))
+
+/** Whole numbers read as such; anything else keeps its fraction. */
+const formatValue = (value) => (Number.isInteger(value) ? String(value) : String(Math.round(value * 100) / 100))
 
 export default defineComponent({
     metadata: {
@@ -23,33 +45,55 @@ export default defineComponent({
         value: { type: "number", defaultValue: 0 },
         min: { type: "number", defaultValue: 0 },
         max: { type: "number", defaultValue: 100 },
-        step: { type: "number" },
+        steps: { type: "number" },
     },
 
     body: (props) => {
-        const lowerBound = props.min ?? 0
-        const upperBound = props.max ?? 100
+        const lowerBound = typeof props.min === "number" ? props.min : 0
+        const upperBound = typeof props.max === "number" && props.max > lowerBound ? props.max : lowerBound + 100
         const value = typeof props.value === "number" ? props.value : lowerBound
         const setValue = typeof props.setValue === "function" ? props.setValue : () => {}
+        const steps = typeof props.steps === "number" && props.steps > 0 ? Math.floor(props.steps) : 0
+        const failed = failedChecks(props.checks)
 
         const slider = Slider({
             value,
             setValue,
             lowerBound,
             upperBound,
-            step: props.step ?? null,
-            label: asText(asText(props.label)),
+            step: steps > 0 ? (upperBound - lowerBound) / steps : null,
+            label: asText(props.label),
         })
 
-        if (!props.label) {
+        // Built as arrays so the props-form of a layout gets a literal `Component[]`,
+        // which `metabind validate` checks for statically.
+        const header = props.label
+            ? [
+                  HStack({ spacing: 8 }, [
+                      Text(asText(props.label)).font("caption").foregroundStyle(Color(failed.length > 0 ? "red" : "secondary")),
+                      Spacer(),
+                      Text(formatValue(value)).font("caption").monospaced().foregroundStyle(Color("secondary")),
+                  ]),
+              ]
+            : []
+
+        const error = failed.length > 0 ? [Text(asText(failed[0].message)).font("caption").foregroundStyle(Color("red"))] : []
+
+        if (header.length === 0 && error.length === 0) {
             return slider
         }
 
-        return VStack({ spacing: 4, alignment: "leading" }, [
-            Text(asText(props.label)).font("caption").foregroundStyle(Color("secondary")),
-            slider,
-        ]).frame({ maxWidth: Infinity, alignment: "leading" })
+        return VStack({ spacing: 4, alignment: "leading" }, [...header, slider, ...error]).frame({
+            maxWidth: Infinity,
+            alignment: "leading",
+        })
     },
 
-    previews: [Self({ label: "Budget", value: 40, min: 0, max: 100, step: 5 }).previewName("Stepped")],
+    previews: [
+        Self({ label: "Budget", value: 40, min: 0, max: 100, steps: 20 }).previewName("Stepped"),
+        Self({ label: "Volume", value: 0.35, min: 0, max: 1 }).previewName("Continuous"),
+        Self({ label: "Guests", value: 0, min: 0, max: 12, checks: [{ condition: false, message: "Invite at least one guest" }] }).previewName(
+            "Failing a check"
+        ),
+    ],
 });

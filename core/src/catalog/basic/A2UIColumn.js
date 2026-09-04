@@ -5,6 +5,13 @@
 
 const ALIGNMENT = { start: "leading", center: "center", end: "trailing", stretch: "leading" }
 
+// The stack sizes to its widest child, so its own placement inside the full-width frame
+// has to follow `align` too — pinned leading, a centred stack of short children sits on
+// the left of the card with its children centred on each other, which reads as nothing.
+const FRAME_ALIGNMENT = { start: "leading", center: "center", end: "trailing", stretch: "leading" }
+
+const interleave = (items) => items.flatMap((child, index) => (index === 0 ? [child] : [Spacer(), child]))
+
 export default defineComponent({
     metadata: {
         title: "A2UIColumn",
@@ -13,26 +20,36 @@ export default defineComponent({
     },
 
     properties: {
-        justify: { type: "enum", options: ["start", "center", "end", "spaceBetween"], defaultValue: "start" },
-        align: { type: "enum", options: ["start", "center", "end", "stretch"], defaultValue: "start" },
+        justify: {
+            type: "enum",
+            options: ["start", "center", "end", "spaceBetween", "spaceAround", "spaceEvenly", "stretch"],
+            defaultValue: "start",
+        },
+        align: { type: "enum", options: ["start", "center", "end", "stretch"], defaultValue: "stretch" },
         spacing: { type: "number", defaultValue: 12 },
     },
 
     body: (props, children) => {
-        // `weight` lets a child claim proportional space. Only the engine can see each
-        // child node's weight, so it passes them down as `childWeights`.
+        const justify = props.justify ?? "start"
+
+        // `weight` lets a child claim a share of the height — equal shares, for the reasons
+        // in A2UIRow. Only the engine can see each child node's weight, so it passes them
+        // down as `childWeights`.
         const weights = Array.isArray(props.childWeights) ? props.childWeights : []
 
         const items = (children ?? []).map((child, index) => {
             const weight = weights[index]
 
-            if (typeof weight !== "number" || weight <= 0) {
-                return child
+            if (typeof weight === "number" && weight > 0) {
+                return child.frame({ maxHeight: Infinity, alignment: "top" })
             }
 
-            return child.frame({ maxWidth: Infinity }).layoutPriority(weight)
+            if (justify === "stretch") {
+                return child.frame({ maxHeight: Infinity })
+            }
+
+            return child
         })
-        const justify = props.justify ?? "start"
 
         let laidOut = items
 
@@ -41,11 +58,17 @@ export default defineComponent({
         } else if (justify === "end") {
             laidOut = [Spacer(), ...items]
         } else if (justify === "spaceBetween") {
-            laidOut = items.flatMap((child, index) => (index === 0 ? [child] : [Spacer(), child]))
+            laidOut = interleave(items)
+        } else if (justify === "spaceAround" || justify === "spaceEvenly") {
+            laidOut = [Spacer(), ...interleave(items), Spacer()]
         }
 
-        return VStack({ spacing: props.spacing ?? 12, alignment: ALIGNMENT[props.align] || "leading" }, laidOut)
-            .frame({ maxWidth: Infinity, alignment: "leading" })
+        // Distributed layouts own their gaps; a stack spacing on top would double them.
+        const distributed = justify === "spaceBetween" || justify === "spaceAround" || justify === "spaceEvenly"
+        const spacing = distributed ? 0 : (props.spacing ?? 12)
+
+        return VStack({ spacing, alignment: ALIGNMENT[props.align] || ALIGNMENT.stretch }, laidOut)
+            .frame({ maxWidth: Infinity, alignment: FRAME_ALIGNMENT[props.align] || FRAME_ALIGNMENT.stretch })
     },
 
     previews: [Self({}, [Text("First"), Text("Second"), Text("Third")]).previewName("Default")],

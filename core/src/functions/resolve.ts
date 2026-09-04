@@ -200,5 +200,6 @@ function functionContext(context: ResolveContext): FunctionContext {
         locale: context.locale,
         timeZone: context.timeZone,
         openUrl: context.openUrl,
+        call: (name, args) => callFunction(name, args, context),
     }
 }

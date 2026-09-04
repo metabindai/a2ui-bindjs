@@ -8,6 +8,7 @@ import type { JsonValue } from '../src/protocol/types'
 const registry = createStandardRegistry()
 
 const dataModel = {
+    start: '2026-02-02T15:17:05Z',
     name: 'Ada',
     count: 3,
     price: 1234.5,
@@ -21,6 +22,7 @@ function contextFor(overrides: Partial<FunctionContext> = {}): FunctionContext {
         getValue: (path: string) => getAt(dataModel as JsonValue, resolvePath(path, overrides.scope ?? '/')),
         scope: '/',
         locale: 'en-US',
+        call: (name, args) => registry.call(name, args, contextFor(overrides)),
         ...overrides,
     }
 }
@@ -58,6 +60,30 @@ describe('formatString', () => {
         expect(call('formatString', { value: '${/count}' })).toBe('3')
     })
 
+    // The spec's `formatString` allows renderer function calls inside a placeholder, with
+    // named arguments and nested placeholders. These are the shapes the official examples use.
+    it.each([
+        ["${formatDate(value: ${/start}, format: 'E, MMM d')} • ${formatDate(value: ${/start}, format: 'h:mm a')}", 'Mon, Feb 2 • 3:17 PM'],
+        ["Hello! Today is ${formatDate(value: ${/start}, format: 'EEEE, MMMM d')}.", 'Hello! Today is Monday, February 2.'],
+        ["${formatCurrency(value: ${/price}, currency: 'USD')}/year", '$1,234.50/year'],
+        ["(${formatNumber(value: ${/count})} ${pluralize(value: ${/count}, one: 'review', other: 'reviews')})", '(3 reviews)'],
+        ['${/count}% of ${formatNumber(value: ${/price})} goal', '3% of 1,234.5 goal'],
+        ["${pluralize(value: 1, one: 'item', other: 'items')}", 'item'],
+    ])('interpolates a function call: %j', (template, expected) => {
+        expect(call('formatString', { value: template }, { timeZone: 'UTC' })).toBe(expected)
+    })
+
+    it('leaves an unclosed placeholder as text, and reports an unknown call', () => {
+        expect(call('formatString', { value: 'x ${/name' })).toBe('x ${/name')
+
+        // Through the engine this becomes a RESOLVE_FAILED diagnostic, not a blank.
+        expect(() => call('formatString', { value: 'a ${nope(value: 1)} b' })).toThrow(/Unknown function 'nope'/)
+    })
+
+    it("supports the spec's \\${ escape for a literal ${", () => {
+        expect(call('formatString', { value: 'Use \\${/path} here' })).toBe('Use ${/path} here')
+    })
+
     it('supports $${ as an escape for a literal ${', () => {
         expect(call('formatString', { value: '$${/name}' })).toBe('${/name}')
     })
@@ -81,10 +107,43 @@ describe('number and date formatting', () => {
         expect(call('formatCurrency', { value: 10 })).toBe('$10.00')
     })
 
-    it('formats dates', () => {
+    it('formats dates without a pattern, as a medium date', () => {
         expect(call('formatDate', { value: '2026-02-02T15:17:00Z', timeZone: 'UTC' })).toBe('Feb 2, 2026')
         expect(call('formatDate', { value: '2026-02-02T15:17:00Z', dateStyle: 'short', timeZone: 'UTC' })).toBe('2/2/26')
         expect(call('formatDate', { value: 'not a date' })).toBe('not a date')
+    })
+
+    // The spec's `format` is a TR35 pattern. These are the ten the official examples use,
+    // plus the tokens its reference lists, on a Monday afternoon in February.
+    it.each([
+        ['E', 'Mon'],
+        ['EEEE', 'Monday'],
+        ['d', '2'],
+        ['dd', '02'],
+        ['E, MMM d', 'Mon, Feb 2'],
+        ['MMM d, yyyy', 'Feb 2, 2026'],
+        ['MMMM d, yyyy', 'February 2, 2026'],
+        ['h:mm a', '3:17 PM'],
+        ['HH:mm', '15:17'],
+        ['hh:mm:ss', '03:17:05'],
+        ['MM/dd/yy', '02/02/26'],
+        ["EEEE, MMM d 'at' h:mm a", 'Monday, Feb 2 at 3:17 PM'],
+        ["EEEE, MMMM d, yyyy 'at' h:mm a", 'Monday, February 2, 2026 at 3:17 PM'],
+        ["h 'o''clock'", "3 o'clock"],
+    ])('formats a date with the pattern %j', (format, expected) => {
+        expect(call('formatDate', { value: '2026-02-02T15:17:05Z', format, timeZone: 'UTC' })).toBe(expected)
+    })
+
+    it('formats a pattern in the locale it is asked for', () => {
+        expect(call('formatDate', { value: '2026-02-02T15:17:00Z', format: 'EEEE d MMMM', timeZone: 'UTC' }, { locale: 'fr-FR' })).toBe(
+            'lundi 2 février'
+        )
+    })
+
+    it('formats a pattern in the context time zone', () => {
+        expect(call('formatDate', { value: '2026-02-02T23:30:00Z', format: 'E h:mm a' }, { timeZone: 'Australia/Sydney' })).toBe(
+            'Tue 10:30 AM'
+        )
     })
 
     it('pluralizes', () => {

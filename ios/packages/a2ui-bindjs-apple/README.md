@@ -12,8 +12,23 @@ host.apply(messagesFromTheAgent)           // JSON, one message or an array
 A2UISurfaceView(host: host)                // in a SwiftUI body
 ```
 
-That is the whole surface area. `setValue`, `reset`, `surfaceIds` and `diagnostics` round
-it out; nothing else needs to be public.
+That is the whole surface area. `setValue`, `reset`, `surfaceIds`, `diagnostics` and
+`useCatalog` round it out; nothing else needs to be public.
+
+## Your own components
+
+```swift
+host.useCatalog(
+    sources: ["Rating": ratingSource, "BrandButton": buttonSource],   // BindJS name → source
+    catalog: ["Rating": "Rating", "Button": "BrandButton"]            // A2UI type → BindJS name
+)
+```
+
+Call it before the first surface arrives. `catalog` is merged over the basic catalog, so
+name only what you are adding or replacing — the rest still comes from the bundle. The
+sources are the same strings the web renderer takes as `sources`, so one component
+restyles both; `examples/ios/custom-catalog` and `examples/web/custom-catalog` share
+theirs verbatim.
 
 ## Where the manifest is
 

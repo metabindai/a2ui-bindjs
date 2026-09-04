@@ -54,6 +54,13 @@ export interface FunctionContext {
 
     /** Host hook for `openUrl`. Absent means URL opening is unsupported. */
     openUrl?(url: string, target?: string): void
+
+    /**
+     * Calls another registered function with already-resolved arguments. `formatString`
+     * uses it for `${formatDate(value: ${/start}, format: 'h:mm a')}`. Absent when the
+     * caller supplied no registry, in which case such a placeholder renders as empty.
+     */
+    call?(name: string, args: Record<string, JsonValue | undefined>): JsonValue | undefined
 }
 
 // ---------------------------------------------------------------------------

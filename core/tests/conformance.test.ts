@@ -121,6 +121,53 @@ describe('spec examples', () => {
     })
 })
 
+// The v0.9 corpus is what every upstream renderer, gallery and demo still shows, so it is
+// the like-for-like comparison. Its schemas are not vendored; the engine answers to the
+// v0.9 catalog id and renders the same components, so it is parsed and rendered, not
+// validated.
+describe('v0.9 spec examples', () => {
+    const legacyDir = fileURLToPath(new URL('../../vendor/spec/v0_9/catalogs/basic/examples/', import.meta.url))
+
+    const legacy: Example[] = readdirSync(legacyDir)
+        .filter((file) => file.endsWith('.json'))
+        .sort()
+        .map((file) => {
+            const parsed = loadJson(`${legacyDir}${file}`)
+
+            return { file, name: (parsed.name as string) ?? file, messages: (parsed.messages ?? []) as AgentMessage[] }
+        })
+
+    it('found the vendored corpus', () => {
+        expect(legacy.length).toBe(43)
+    })
+
+    it.each(legacy.map((example) => [example.file, example] as const))('%s is accepted by our parser', (_file, example) => {
+        for (const message of example.messages) {
+            expect(() => parseMessage(message)).not.toThrow()
+        }
+    })
+
+    it.each(legacy.map((example) => [example.file, example] as const))('%s renders through the catalog', (_file, example) => {
+        const store = new SurfaceStore()
+        store.applyAll(example.messages)
+
+        for (const surfaceId of store.surfaceIds) {
+            const result = renderSurface({
+                runtime: runtime as unknown as BindJSRuntimeLike,
+                surface: store.requireSurface(surfaceId),
+                catalog: BASIC_CATALOG,
+                registry: createStandardRegistry(),
+                locale: 'en-US',
+            })
+
+            expect(result.diagnostics, `${surfaceId}: ${JSON.stringify(result.diagnostics)}`).toEqual([])
+            expect(runtime.unwrapComponentAST(result.ast), `${surfaceId} produced no AST`).not.toBeNull()
+        }
+
+        expect(consoleErrors, `runtime errors: ${JSON.stringify(consoleErrors.slice(0, 1))}`).toEqual([])
+    })
+})
+
 describe('vendored spec version', () => {
     // Dropping in a different spec version would otherwise regenerate happily and only
     // fail somewhere less obvious.

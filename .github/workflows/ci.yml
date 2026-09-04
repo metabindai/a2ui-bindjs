@@ -109,12 +109,13 @@ jobs:
 
             - run: pnpm install --frozen-lockfile
 
-            # The renderer bundle is generated but committed, so an example runs without a
-            # JavaScript toolchain. That only holds if the committed copy is current.
-            - name: The committed renderer bundle is up to date
+            # The renderer bundle and the catalog example's copy of the spec examples are
+            # generated but committed, so an example runs without a JavaScript toolchain.
+            # That only holds if the committed copies are current.
+            - name: The committed renderer bundle and spec examples are up to date
               run: |
                   pnpm sync:native
-                  git diff --exit-code -- ios/packages/a2ui-bindjs-apple/Sources/A2UI/Resources/a2ui-native.js
+                  git diff --exit-code -- ios/packages/a2ui-bindjs-apple/Sources/A2UI/Resources/a2ui-native.js examples/ios/catalog/Sources/A2UICatalog/SpecExamples.generated.swift
 
             # The root manifest is what a SwiftPM consumer resolves by URL.
             - name: Build the Apple library
@@ -129,6 +130,23 @@ jobs:
               timeout-minutes: 5
               run: swift run --package-path examples/ios/minimal A2UIMinimal --check
 
+            # Every basic-catalog component as an A2UI surface, decoded natively with no
+            # diagnostics — a catalog source that breaks on JavaScriptCore fails here.
+            - name: Build the catalog example
+              run: swift build --package-path examples/ios/catalog
+
+            - name: Run the catalog surfaces headlessly
+              timeout-minutes: 5
+              run: swift run --package-path examples/ios/catalog A2UICatalog --check
+
+            # A component registered by the app, named by the agent: proves `useCatalog`
+            # on the host and that the same BindJS source the web example uses draws here.
+            - name: Build the custom-catalog example
+              run: swift build --package-path examples/ios/custom-catalog
+
+            - name: Run the custom-catalog checks
+              timeout-minutes: 5
+              run: swift run --package-path examples/ios/custom-catalog A2UICustomCatalog --check
     android:
         name: android
         runs-on: ubuntu-latest

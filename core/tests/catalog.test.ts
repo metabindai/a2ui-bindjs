@@ -1,4 +1,7 @@
 import { BindJSRuntime } from '@metabindai/bindjs-runtime'
+import { readdirSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { BASIC_CATALOG, BASIC_CATALOG_ID } from '../src/engine/catalog'
@@ -122,7 +125,7 @@ const CASES: Record<string, A2UIComponent[]> = {
             ],
         },
     ],
-    Slider: [{ id: 'root', component: 'Slider', label: 'Budget', value: 40, min: 0, max: 100, step: 5 }],
+    Slider: [{ id: 'root', component: 'Slider', label: 'Budget', value: 40, min: 0, max: 100, steps: 20 }],
 }
 
 describe('basic catalog', () => {
@@ -317,6 +320,324 @@ describe('basic catalog', () => {
         expect(unwrapped).not.toBeNull()
         expect(nodeCount).toBe(1)
         expect(consoleErrors).toEqual([])
+    })
+})
+
+// Behaviour adopted from the official SwiftUI basic catalog: renderer-side `checks`,
+// the spec's neutral icon names, its Image variants, the full set of justify values,
+// `Slider.steps`, and the Video poster frame.
+describe('parity with the official SwiftUI catalog', () => {
+    // The body the component built, without the ComponentCall wrapper that echoes the
+    // input props — so a message that was *not* rendered is genuinely absent.
+    function rendered(components: A2UIComponent[], dataModel?: Record<string, JsonValue>): string {
+        const { ast, diagnostics } = render({ components, dataModel })
+
+        expect(diagnostics).toEqual([])
+        expect(consoleErrors).toEqual([])
+
+        return JSON.stringify((ast as { props: { children: unknown } }).props.children)
+    }
+
+    function count(text: string, needle: string): number {
+        return text.split(needle).length - 1
+    }
+
+    const FAILING = [
+        { condition: false, message: 'Needs attention' },
+        { condition: false, message: 'Second failure' },
+    ]
+
+    const INPUTS: Record<string, A2UIComponent> = {
+        TextField: { id: 'root', component: 'TextField', label: 'Email', value: 'x', checks: FAILING },
+        CheckBox: { id: 'root', component: 'CheckBox', label: 'Agree', value: false, checks: FAILING },
+        ChoicePicker: { id: 'root', component: 'ChoicePicker', options: [{ label: 'A', value: 'a' }], value: [], checks: FAILING },
+        Slider: { id: 'root', component: 'Slider', label: 'Guests', value: 0, min: 0, max: 10, checks: FAILING },
+        DateTimeInput: { id: 'root', component: 'DateTimeInput', label: 'When', value: '', enableDate: true, checks: FAILING },
+    }
+
+    it.each(Object.keys(INPUTS))('shows only the first failed check under a %s', (type) => {
+        const text = rendered([INPUTS[type]])
+
+        expect(text).toContain('Needs attention')
+        expect(text).not.toContain('Second failure')
+    })
+
+    it('keeps a passing check silent', () => {
+        const text = rendered([
+            { id: 'root', component: 'TextField', label: 'Email', value: 'x', checks: [{ condition: true, message: 'Hidden' }] },
+        ])
+
+        expect(text).not.toContain('Hidden')
+    })
+
+    it('resolves a check condition from the data model', () => {
+        const field: A2UIComponent = {
+            id: 'root',
+            component: 'TextField',
+            label: 'Email',
+            value: 'x',
+            checks: [{ condition: { path: '/agreed' }, message: 'Must agree' }],
+        }
+
+        expect(rendered([field], { agreed: false })).toContain('Must agree')
+        expect(rendered([field], { agreed: true })).not.toContain('Must agree')
+    })
+
+    it('treats a validation function result as a check condition', () => {
+        const field: A2UIComponent = {
+            id: 'root',
+            component: 'TextField',
+            label: 'Name',
+            value: { path: '/name' },
+            checks: [{ condition: { call: 'required', args: { value: { path: '/name' } } }, message: 'Name is required' }],
+        }
+
+        expect(rendered([field], { name: '' })).toContain('Name is required')
+        expect(rendered([field], { name: 'Ada' })).not.toContain('Name is required')
+    })
+
+    it('falls back to the validation function message when the rule has none', () => {
+        const field: A2UIComponent = {
+            id: 'root',
+            component: 'TextField',
+            label: 'Email',
+            value: { path: '/email' },
+            checks: [{ condition: { call: 'email', args: { value: { path: '/email' } } } }] as never,
+        }
+
+        expect(rendered([field], { email: 'nope' })).toContain('email')
+    })
+
+    it('disables a Button whose checks fail, and only then', () => {
+        const label: A2UIComponent = { id: 'a', component: 'Text', text: 'Submit' }
+        const gated: A2UIComponent = {
+            id: 'root',
+            component: 'Button',
+            child: 'a',
+            checks: [{ condition: false, message: 'Not yet' }],
+            action: { event: { name: 'submit' } },
+        }
+        const open: A2UIComponent = { ...gated, checks: [{ condition: true, message: 'Not yet' }] }
+
+        expect(rendered([gated, label])).toContain('"type":"disabled"')
+        expect(rendered([open, label])).not.toContain('"type":"disabled"')
+    })
+
+    it.each([
+        ['shoppingCart', 'cart'],
+        ['favorite', 'heart.fill'],
+        ['notAnIcon', 'questionmark.circle'],
+    ])('draws Icon %j as the symbol %j', (name, symbol) => {
+        expect(rendered([{ id: 'root', component: 'Icon', name }])).toContain(`"systemName":"${symbol}"`)
+    })
+
+    it('draws an Icon from svgPath, literal or bound', () => {
+        const literal = rendered([{ id: 'root', component: 'Icon', name: { svgPath: 'M12 2L2 22h20z' } }])
+        const bound = rendered([{ id: 'root', component: 'Icon', name: { path: '/icon' } }], { icon: { svgPath: 'M0 0h24v24z' } })
+
+        expect(literal).toContain('<svg')
+        expect(literal).toContain('M12 2L2 22h20z')
+        expect(bound).toContain('M0 0h24v24z')
+        expect(literal).not.toContain('systemName')
+    })
+
+    it.each(['icon', 'avatar', 'smallFeature', 'mediumFeature', 'largeFeature', 'header'])('renders Image variant %s', (variant) => {
+        const text = rendered([{ id: 'root', component: 'Image', url: 'https://example.com/a.png', variant }])
+
+        if (variant === 'avatar') {
+            expect(text).toContain('"type":"clipShape"')
+        }
+
+        if (variant === 'icon') {
+            expect(text).toContain('"width":24')
+        }
+    })
+
+    it('fits an Image for contain and scaleDown, fills otherwise', () => {
+        const fitted = rendered([{ id: 'root', component: 'Image', url: 'https://example.com/a.png', fit: 'scaleDown' }])
+        const filled = rendered([{ id: 'root', component: 'Image', url: 'https://example.com/a.png', fit: 'none' }])
+
+        expect(fitted).toContain('"contentMode":"fit"')
+        expect(filled).toContain('"contentMode":"fill"')
+    })
+
+    it.each(['Row', 'Column'])('distributes %s children for spaceEvenly with a Spacer at each end', (component) => {
+        const text = rendered([
+            { id: 'root', component, justify: 'spaceEvenly', children: ['a', 'b', 'c'] },
+            { id: 'a', component: 'Text', text: 'A' },
+            { id: 'b', component: 'Text', text: 'B' },
+            { id: 'c', component: 'Text', text: 'C' },
+        ])
+
+        expect(count(text, '"type":"Spacer"')).toBe(4)
+    })
+
+    it('top-aligns a Row that sets no align, as the spec default stretch reads', () => {
+        const row = (align?: string): string =>
+            rendered([
+                { id: 'root', component: 'Row', ...(align ? { align } : {}), children: ['a'] },
+                { id: 'a', component: 'Text', text: 'A' },
+            ])
+
+        expect(row()).toContain('"alignment":"top"')
+        expect(row('stretch')).toContain('"alignment":"top"')
+        expect(row('center')).toContain('"alignment":"center"')
+    })
+
+    it('places a Column where its align says, not only its children', () => {
+        const column = (align: string): string =>
+            rendered([
+                { id: 'root', component: 'Column', align, children: ['a'] },
+                { id: 'a', component: 'Text', text: 'A' },
+            ])
+
+        expect(column('center')).toContain('"alignment":"center"')
+        expect(column('center')).not.toContain('"alignment":"leading"')
+        expect(column('end')).toContain('"alignment":"trailing"')
+    })
+
+    it('leaves a single markdown heading unwrapped so a centred parent can centre it', () => {
+        const body = rendered([{ id: 'root', component: 'Text', text: '### Location' }])
+
+        expect(body).toContain('"markdown":"Location"')
+        expect(body).not.toContain('"type":"VStack"')
+        expect(body).not.toContain('"alignment":"leading"')
+    })
+
+    it('gives weighted Row children a share of the width and never a layout priority', () => {
+        const body = rendered([
+            { id: 'root', component: 'Row', children: ['a', 'b'] },
+            { id: 'a', component: 'Text', text: 'A', weight: 2 },
+            { id: 'b', component: 'Text', text: 'B', weight: 1 },
+        ])
+
+        expect(count(body, '"alignment":"leading"')).toBeGreaterThanOrEqual(2)
+        expect(body).not.toContain('layoutPriority')
+    })
+
+    it('draws body text on the platform body font', () => {
+        expect(rendered([{ id: 'root', component: 'Text', text: 'Hello' }])).toContain('"rawValue":"body"')
+    })
+
+    it.each(['spaceAround', 'stretch'])('renders a Row with justify %s', (justify) => {
+        rendered([
+            { id: 'root', component: 'Row', justify, children: ['a'] },
+            { id: 'a', component: 'Text', text: 'A' },
+        ])
+    })
+
+    it('derives the Slider step from steps and shows the value', () => {
+        const text = rendered([{ id: 'root', component: 'Slider', label: 'Budget', value: 40, min: 0, max: 100, steps: 20 }])
+
+        expect(text).toContain('"step":5')
+        expect(text).toContain('"rawValue":"40"')
+    })
+
+    it('passes a Video poster frame', () => {
+        const text = rendered([
+            { id: 'root', component: 'Video', url: 'https://example.com/a.mp4', posterUrl: 'https://example.com/p.jpg' },
+        ])
+
+        expect(text).toContain('"poster":"https://example.com/p.jpg"')
+    })
+
+    it('asks DateTimeInput for a date when neither flag is set', () => {
+        const neither = rendered([{ id: 'root', component: 'DateTimeInput', value: '' }])
+        const timeOnly = rendered([{ id: 'root', component: 'DateTimeInput', value: '', enableTime: true }])
+
+        expect(neither).toContain('"placeholder":"YYYY-MM-DD"')
+        expect(timeOnly).toContain('"placeholder":"HH:MM"')
+    })
+
+    // The spec's route to a heading is `# Heading` — `variant` has no heading value — and
+    // 19 of its 43 examples take it. Natively, Text handles inline markdown only.
+    describe('block markdown in Text', () => {
+        function text(value: string, variant?: string): string {
+            return rendered([{ id: 'root', component: 'Text', text: value, ...(variant ? { variant } : {}) }])
+        }
+
+        it.each([
+            ['# Title', 'title'],
+            ['## Title', 'title2'],
+            ['### Title', 'title3'],
+            ['#### Title', 'headline'],
+            ['##### Title', 'subheadline'],
+        ])('draws %j as a heading on the type ramp', (value, font) => {
+            const body = text(value)
+
+            expect(body).toContain('"markdown":"Title"')
+            expect(body).toContain(`"rawValue":"${font}"`)
+            expect(body).not.toContain('#')
+        })
+
+        it('keeps a plain value as one Text', () => {
+            expect(text('Just **bold** and _italic_')).not.toContain('"type":"VStack"')
+        })
+
+        it('does not read a dash after a space as a list marker', () => {
+            expect(text(' - Qty: ')).not.toContain('•')
+        })
+
+        it('stacks the blocks of the spec markdown example', () => {
+            const body = text('# Heading 1\n\nThis is **bold** text.\n\n- List item 1\n- List item 2\n\n[Link](https://a2ui.org)')
+
+            expect(body).toContain('"type":"VStack"')
+            expect(body).toContain('"markdown":"Heading 1"')
+            expect(body).toContain('"markdown":"• List item 1"')
+            expect(body).toContain('"markdown":"• List item 2"')
+            expect(body).toContain('[Link](https://a2ui.org)')
+        })
+
+        it('draws numbered lists, quotes and code', () => {
+            const body = text('1. One\n2. Two\n\n> Quoted\n\n```\nlet x = 1\n```')
+
+            expect(body).toContain('"markdown":"1. One"')
+            expect(body).toContain('"markdown":"Quoted"')
+            expect(body).toContain('"type":"Rectangle"')
+            expect(body).toContain('"markdown":"let x = 1"')
+            expect(body).toContain('"type":"monospaced"')
+        })
+
+        it('keeps the caption size for list items in a caption', () => {
+            expect(text('- a\n- b', 'caption')).toContain('"rawValue":"caption"')
+        })
+
+        it('renders every heading the spec examples write without a literal hash', () => {
+            const dir = join(__dirname, '..', '..', 'vendor', 'spec', 'v1_0', 'catalogs', 'basic', 'examples')
+            const headings: string[] = []
+
+            for (const file of readdirSync(dir).filter((name) => name.endsWith('.json'))) {
+                const example = JSON.parse(readFileSync(join(dir, file), 'utf8')) as { messages: Array<Record<string, unknown>> }
+
+                for (const message of example.messages) {
+                    for (const payload of Object.values(message)) {
+                        const components = (payload as { components?: A2UIComponent[] }).components ?? []
+
+                        for (const component of components) {
+                            if (component.component === 'Text' && typeof component.text === 'string' && component.text.startsWith('#')) {
+                                headings.push(component.text)
+                            }
+                        }
+                    }
+                }
+            }
+
+            expect(headings.length).toBeGreaterThanOrEqual(19)
+
+            for (const value of headings) {
+                expect(text(value), value).not.toContain('"markdown":"#')
+            }
+        })
+    })
+
+    it('marks ChoicePicker stateful so its filter text can live in it', () => {
+        expect(catalogEntry(BASIC_CATALOG.ChoicePicker)!.stateful).toBe(true)
+
+        const text = rendered([
+            { id: 'root', component: 'ChoicePicker', filterable: true, value: [], options: [{ label: 'A', value: 'a' }] },
+        ])
+
+        expect(text).toContain('Search options')
     })
 })
 

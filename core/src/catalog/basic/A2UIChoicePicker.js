@@ -1,7 +1,7 @@
 // A2UI Basic Catalog → BindJS: `ChoicePicker`
 //
 // A2UI props: label, options (array of { label, value }), value, variant, displayStyle,
-// filterable.
+// filterable, checks.
 //
 // Two things here are easy to get wrong, and were:
 //
@@ -18,7 +18,9 @@
 // Beyond a handful of options a segmented control is unreadable, so the style drops to
 // `automatic` (a menu natively, the same `<select>` on the web).
 //
-// `filterable` is not implemented yet, and is ignored rather than pretended.
+// `filterable` adds a search field above the options. The filter text is renderer state —
+// A2UI has nowhere in the data model to put it — which is why this component is listed
+// in `STATEFUL_TYPES`: its output changes without any A2UI input changing.
 
 /**
  * A2UI's DynamicString resolves to whatever the data model holds, so a binding can arrive
@@ -27,11 +29,27 @@
  */
 const asText = (value) => (value === null || value === undefined ? '' : String(value))
 
+/**
+ * A rule's `condition` arrives one of two ways: a boolean, when it was a binding or a logic
+ * function, or a `{ valid, message }` result from a validation function such as
+ * `required` or `email`. Either spelling of failure counts, and the rule's own message
+ * wins over the function's.
+ */
+const isFailure = (condition) =>
+    condition === false || (condition !== null && typeof condition === 'object' && condition.valid === false)
+
+const failedChecks = (checks) =>
+    (Array.isArray(checks) ? checks : [])
+        .filter((rule) => rule && typeof rule === 'object' && isFailure(rule.condition))
+        .map((rule) => ({ message: rule.message ?? (rule.condition && rule.condition.message) ?? 'Invalid' }))
+
 /** More than this in a segmented control and the labels stop being readable. */
 const SEGMENTED_LIMIT = 5
 
 const optionValue = (option) => (option && typeof option === 'object' ? option.value : option)
 const optionLabel = (option) => asText(option && typeof option === 'object' ? (option.label ?? option.value) : option)
+
+const matchesFilter = (option, filter) => optionLabel(option).toLowerCase().indexOf(filter.toLowerCase()) >= 0
 
 export default defineComponent({
     metadata: {
@@ -44,12 +62,19 @@ export default defineComponent({
         label: { type: 'string', defaultValue: '' },
         variant: { type: 'enum', options: ['mutuallyExclusive', 'multipleSelection'], defaultValue: 'mutuallyExclusive' },
         displayStyle: { type: 'enum', options: ['chips', 'checkbox'], defaultValue: 'checkbox' },
+        filterable: { type: 'boolean', defaultValue: false },
     },
 
     body: (props) => {
-        const options = Array.isArray(props.options) ? props.options : []
+        // Called unconditionally: hook state is keyed by call order within the component.
+        const [filter, setFilter] = useState('')
+
+        const allOptions = Array.isArray(props.options) ? props.options : []
+        const filterable = props.filterable === true
+        const options = filterable && filter ? allOptions.filter((option) => matchesFilter(option, filter)) : allOptions
         const selected = Array.isArray(props.value) ? props.value : props.value === undefined ? [] : [props.value]
         const setValue = typeof props.setValue === 'function' ? props.setValue : () => {}
+        const failed = failedChecks(props.checks)
 
         const multiple = props.variant === 'multipleSelection'
 
@@ -61,7 +86,28 @@ export default defineComponent({
             return setValue(isOn ? selected.filter((entry) => entry !== value) : selected.concat([value]))
         }
 
-        const caption = props.label ? [Text(asText(props.label)).font('caption').foregroundStyle(Color('secondary'))] : []
+        // Built as arrays so the props-form of a layout gets a literal `Component[]`,
+        // which `metabind validate` checks for statically.
+        const caption = props.label
+            ? [Text(asText(props.label)).font('caption').foregroundStyle(Color(failed.length > 0 ? 'red' : 'secondary'))]
+            : []
+
+        const search = filterable
+            ? [
+                  TextField({ placeholder: 'Search options', text: filter, setText: setFilter })
+                      .padding(8)
+                      .background(Color('quaternary'))
+                      .cornerRadius(8),
+              ]
+            : []
+
+        const error = failed.length > 0 ? [Text(asText(failed[0].message)).font('caption').foregroundStyle(Color('red'))] : []
+
+        const wrap = (control) =>
+            VStack({ spacing: 8, alignment: 'leading' }, [...caption, ...search, ...control, ...error]).frame({
+                maxWidth: Infinity,
+                alignment: 'leading',
+            })
 
         // One choice: the platform's own control, which is the whole point of naming a
         // component rather than describing a layout.
@@ -74,10 +120,7 @@ export default defineComponent({
                 options.length > SEGMENTED_LIMIT ? 'automatic' : 'segmented'
             )
 
-            return VStack({ spacing: 8, alignment: 'leading' }, [...caption, picker]).frame({
-                maxWidth: Infinity,
-                alignment: 'leading',
-            })
+            return wrap([picker])
         }
 
         if (props.displayStyle === 'chips') {
@@ -96,12 +139,7 @@ export default defineComponent({
                 return Button(chip, () => toggle(value)).id(optionLabel(option + (isOn ? '1' : '0')))
             })
 
-            // Array literal, not `.concat`: the props-form of a layout is strict about
-            // receiving `Component[]`, and `metabind validate` checks for it statically.
-            return VStack({ spacing: 8, alignment: 'leading' }, [...caption, HStack({ spacing: 8 }, chips)]).frame({
-                maxWidth: Infinity,
-                alignment: 'leading',
-            })
+            return wrap([HStack({ spacing: 8 }, chips)])
         }
 
         const rows = options.map((option) => {
@@ -114,10 +152,7 @@ export default defineComponent({
             })
         })
 
-        return VStack({ spacing: 8, alignment: 'leading' }, [...caption, ...rows]).frame({
-            maxWidth: Infinity,
-            alignment: 'leading',
-        })
+        return wrap(rows)
     },
 
     previews: [
@@ -149,5 +184,27 @@ export default defineComponent({
                 { label: 'Basil', value: 'basil' },
             ],
         }).previewName('Checkboxes, multiple'),
+
+        Self({
+            label: 'Country',
+            variant: 'mutuallyExclusive',
+            filterable: true,
+            value: [],
+            options: ['Australia', 'Austria', 'Belgium', 'Brazil', 'Canada', 'Chile', 'Denmark'].map((name) => ({
+                label: name,
+                value: name,
+            })),
+        }).previewName('Filterable'),
+
+        Self({
+            label: 'Size',
+            variant: 'mutuallyExclusive',
+            value: [],
+            options: [
+                { label: 'Small', value: 's' },
+                { label: 'Large', value: 'l' },
+            ],
+            checks: [{ condition: false, message: 'Pick a size' }],
+        }).previewName('Failing a check'),
     ],
 })

@@ -1,8 +1,9 @@
 // A2UI Basic Catalog → BindJS: `Video`
 //
 // A2UI props: url (required), posterUrl, description.
-// `Video` is a registered BindJS built-in; the poster frame is not part of its
-// contract yet, so it is used as the accessibility description instead of dropped.
+// `Video` is a registered BindJS built-in. The web backend honours a `poster` frame; the
+// native one does not read it yet and ignores the key, so it is passed rather than
+// dropped and used as the accessibility description as well.
 
 /**
  * A2UI's DynamicString resolves to whatever the data model holds, so a binding can arrive
@@ -25,10 +26,16 @@ export default defineComponent({
     },
 
     body: (props) => {
-        const player = Video({ url: asText(props.url) }).frame({ maxWidth: Infinity, height: 220 }).cornerRadius(8)
+        const poster = asText(props.posterUrl)
+        const source = poster ? { url: asText(props.url), poster } : { url: asText(props.url) }
+
+        const player = Video(source).frame({ maxWidth: Infinity, height: 220 }).cornerRadius(8)
 
         return props.description ? player.accessibilityLabel(asText(props.description)) : player
     },
 
-    previews: [Self({ url: "https://example.com/clip.mp4" }).previewName("Default")],
+    previews: [
+        Self({ url: "https://example.com/clip.mp4" }).previewName("Default"),
+        Self({ url: "https://example.com/clip.mp4", posterUrl: "https://picsum.photos/600/340" }).previewName("With poster"),
+    ],
 });
