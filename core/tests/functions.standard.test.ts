@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { createStandardRegistry } from '../src/functions/registry'
-import type { FunctionContext, ValidationResult } from '../src/functions/types'
+import type { FunctionContext } from '../src/functions/types'
 import { getAt, resolvePath } from '../src/store/jsonPointer'
 import type { JsonValue } from '../src/protocol/types'
 
@@ -31,8 +31,8 @@ function call(name: string, args: Record<string, JsonValue | undefined>, overrid
     return registry.call(name, args, contextFor(overrides))
 }
 
-function validate(name: string, args: Record<string, JsonValue | undefined>): ValidationResult {
-    return call(name, args) as ValidationResult
+function validate(name: string, args: Record<string, JsonValue | undefined>): boolean {
+    return call(name, args) as boolean
 }
 
 describe('formatString', () => {
@@ -97,6 +97,11 @@ describe('number and date formatting', () => {
     it('formats numbers', () => {
         expect(call('formatNumber', { value: 1234.5 })).toBe('1,234.5')
         expect(call('formatNumber', { value: 1234.5, minimumFractionDigits: 2 })).toBe('1,234.50')
+        expect(call('formatNumber', { value: 1234.5678, decimals: 1 })).toBe('1,234.6')
+        expect(call('formatNumber', { value: 1234.5, decimals: 0 })).toBe('1,235')
+        expect(call('formatNumber', { value: 1234567, grouping: false })).toBe('1234567')
+        expect(call('formatCurrency', { value: 1234.5, currency: 'USD', decimals: 0 })).toBe('$1,235')
+        expect(call('formatCurrency', { value: 1234.5, currency: 'USD', grouping: false })).toBe('$1234.50')
         expect(call('formatNumber', { value: '7' })).toBe('7')
         expect(call('formatNumber', { value: 'abc' })).toBe('abc')
     })
@@ -156,48 +161,57 @@ describe('number and date formatting', () => {
 
 describe('validation functions', () => {
     it('required', () => {
-        expect(validate('required', { value: 'x' }).valid).toBe(true)
-        expect(validate('required', { value: 0 }).valid).toBe(true)
-        expect(validate('required', { value: '' }).valid).toBe(false)
-        expect(validate('required', { value: '   ' }).valid).toBe(false)
-        expect(validate('required', { value: null }).valid).toBe(false)
-        expect(validate('required', { value: [] }).valid).toBe(false)
+        expect(validate('required', { value: 'x' })).toBe(true)
+        expect(validate('required', { value: 0 })).toBe(true)
+        expect(validate('required', { value: '' })).toBe(false)
+        expect(validate('required', { value: '   ' })).toBe(false)
+        expect(validate('required', { value: null })).toBe(false)
+        expect(validate('required', { value: [] })).toBe(false)
     })
 
-    it('uses a caller-supplied message', () => {
-        expect(validate('required', { value: '', message: 'Naam is verplicht' }).message).toBe('Naam is verplicht')
-        expect(validate('required', { value: '' }).message).toBe('This field is required.')
+    // The spec declares these as boolean, and only a boolean composes: the login example
+    // gates its button on `and([email(...), length(...)])`.
+    it('returns booleans that the logic functions can combine', () => {
+        const gate = (email: string, password: string) =>
+            call('and', {
+                values: [call('email', { value: email }), call('length', { value: password, min: 8 })],
+            })
+
+        expect(gate('ada@example.com', 'correct horse')).toBe(true)
+        expect(gate('nope', 'correct horse')).toBe(false)
+        expect(gate('ada@example.com', 'short')).toBe(false)
+        expect(call('not', { value: call('required', { value: '' }) })).toBe(true)
     })
 
     it('regex', () => {
-        expect(validate('regex', { value: 'abc123', pattern: '^[a-z]+\\d+$' }).valid).toBe(true)
-        expect(validate('regex', { value: 'ABC', pattern: '^[a-z]+$' }).valid).toBe(false)
-        expect(validate('regex', { value: 'ABC', pattern: '^[a-z]+$', flags: 'i' }).valid).toBe(true)
-        expect(validate('regex', { value: 'x' }).valid).toBe(false)
-        expect(validate('regex', { value: 'x', pattern: '([' }).valid).toBe(false)
+        expect(validate('regex', { value: 'abc123', pattern: '^[a-z]+\\d+$' })).toBe(true)
+        expect(validate('regex', { value: 'ABC', pattern: '^[a-z]+$' })).toBe(false)
+        expect(validate('regex', { value: 'ABC', pattern: '^[a-z]+$', flags: 'i' })).toBe(true)
+        expect(validate('regex', { value: 'x' })).toBe(false)
+        expect(validate('regex', { value: 'x', pattern: '([' })).toBe(false)
     })
 
     it('length', () => {
-        expect(validate('length', { value: 'abc', min: 2, max: 4 }).valid).toBe(true)
-        expect(validate('length', { value: 'a', min: 2 }).valid).toBe(false)
-        expect(validate('length', { value: 'abcde', max: 4 }).valid).toBe(false)
-        expect(validate('length', { value: ['a', 'b'], min: 2 }).valid).toBe(true)
-        expect(validate('length', { value: 5, min: 1 }).valid).toBe(false)
+        expect(validate('length', { value: 'abc', min: 2, max: 4 })).toBe(true)
+        expect(validate('length', { value: 'a', min: 2 })).toBe(false)
+        expect(validate('length', { value: 'abcde', max: 4 })).toBe(false)
+        expect(validate('length', { value: ['a', 'b'], min: 2 })).toBe(true)
+        expect(validate('length', { value: 5, min: 1 })).toBe(false)
     })
 
     it('numeric', () => {
-        expect(validate('numeric', { value: 5 }).valid).toBe(true)
-        expect(validate('numeric', { value: '5' }).valid).toBe(true)
-        expect(validate('numeric', { value: 'five' }).valid).toBe(false)
-        expect(validate('numeric', { value: 5.5, integer: true }).valid).toBe(false)
-        expect(validate('numeric', { value: 1, min: 2 }).valid).toBe(false)
-        expect(validate('numeric', { value: 9, max: 5 }).valid).toBe(false)
+        expect(validate('numeric', { value: 5 })).toBe(true)
+        expect(validate('numeric', { value: '5' })).toBe(true)
+        expect(validate('numeric', { value: 'five' })).toBe(false)
+        expect(validate('numeric', { value: 5.5, integer: true })).toBe(false)
+        expect(validate('numeric', { value: 1, min: 2 })).toBe(false)
+        expect(validate('numeric', { value: 9, max: 5 })).toBe(false)
     })
 
     it('email', () => {
-        expect(validate('email', { value: 'a@b.co' }).valid).toBe(true)
-        expect(validate('email', { value: 'a@b' }).valid).toBe(false)
-        expect(validate('email', { value: '' }).valid).toBe(false)
+        expect(validate('email', { value: 'a@b.co' })).toBe(true)
+        expect(validate('email', { value: 'a@b' })).toBe(false)
+        expect(validate('email', { value: '' })).toBe(false)
     })
 })
 

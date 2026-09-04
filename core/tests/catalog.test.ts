@@ -396,16 +396,11 @@ describe('parity with the official SwiftUI catalog', () => {
         expect(rendered([field], { name: 'Ada' })).not.toContain('Name is required')
     })
 
-    it('falls back to the validation function message when the rule has none', () => {
-        const field: A2UIComponent = {
-            id: 'root',
-            component: 'TextField',
-            label: 'Email',
-            value: { path: '/email' },
-            checks: [{ condition: { call: 'email', args: { value: { path: '/email' } } } }] as never,
-        }
+    it('shows no message row for a failing rule that carries none, but still fails it', () => {
+        const body = rendered([{ id: 'root', component: 'TextField', label: 'Email', value: 'x', checks: [{ condition: false }] as never }])
 
-        expect(rendered([field], { email: 'nope' })).toContain('email')
+        expect(body).toContain('"rawValue":"red"')
+        expect(count(body, '"type":"Text"')).toBe(1)
     })
 
     it('disables a Button whose checks fail, and only then', () => {

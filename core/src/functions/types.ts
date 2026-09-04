@@ -17,21 +17,6 @@ export type AllowedCallers = 'rendererOnly' | 'agentOnly' | 'rendererOrAgent'
 export type Caller = 'renderer' | 'agent'
 
 // ---------------------------------------------------------------------------
-// MARK: - Return values
-// ---------------------------------------------------------------------------
-
-/**
- * Returned by validation functions. The spec allows extra domain-specific
- * properties (a suggested fix, retry parameters) alongside the two standard ones,
- * so this intersects the known shape with an open JSON record — which also keeps
- * a result assignable to `JsonValue`.
- */
-export type ValidationResult = {
-    valid: boolean
-    message?: string
-} & Record<string, JsonValue>
-
-// ---------------------------------------------------------------------------
 // MARK: - Invocation context
 // ---------------------------------------------------------------------------
 

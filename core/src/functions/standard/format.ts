@@ -215,10 +215,20 @@ const formatString: FunctionInput = {
 // MARK: - Number formatting
 // ---------------------------------------------------------------------------
 
+/**
+ * The spec's arguments are `decimals` (an exact number of fraction digits) and `grouping`
+ * (locale separators, on by default). The `Intl` names are accepted too, as an extension.
+ */
 function numberOptions(args: Record<string, JsonValue | undefined>): Intl.NumberFormatOptions {
     const options: Intl.NumberFormatOptions = {}
+    const decimals = toNumber(args.decimals)
     const minimumFractionDigits = toNumber(args.minimumFractionDigits)
     const maximumFractionDigits = toNumber(args.maximumFractionDigits)
+
+    if (decimals !== undefined && decimals >= 0) {
+        options.minimumFractionDigits = decimals
+        options.maximumFractionDigits = decimals
+    }
 
     if (minimumFractionDigits !== undefined) {
         options.minimumFractionDigits = minimumFractionDigits
@@ -226,6 +236,10 @@ function numberOptions(args: Record<string, JsonValue | undefined>): Intl.Number
 
     if (maximumFractionDigits !== undefined) {
         options.maximumFractionDigits = maximumFractionDigits
+    }
+
+    if (args.grouping === false) {
+        options.useGrouping = false
     }
 
     if (typeof args.style === 'string') {
