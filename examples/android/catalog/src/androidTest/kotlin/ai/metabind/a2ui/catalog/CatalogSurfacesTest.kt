@@ -4,6 +4,7 @@
 // each to decode the way `A2UISurfaceView` would. A surface that produces no tree or a
 // diagnostic fails the test and names itself. Instrumented, because `JavaScriptSandbox`
 // is served by the system WebView.
+
 package ai.metabind.a2ui.catalog
 
 import ai.metabind.a2ui.A2UIHost

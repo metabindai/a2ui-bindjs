@@ -2,6 +2,7 @@
 //
 // Four panels of chrome around the same two surfaces drawn by two hosts. Nothing here
 // describes an offer card or a star; that arrives as A2UI and a catalog draws it.
+
 package ai.metabind.a2ui.customcatalog
 
 import ai.metabind.a2ui.A2UIHost

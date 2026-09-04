@@ -3,6 +3,7 @@
 // Proves the catalog is what makes the difference: the host without it cannot draw
 // `Rating`, the host with it can, and a write into the data model repaints. Instrumented,
 // because `JavaScriptSandbox` is served by the system WebView.
+
 package ai.metabind.a2ui.customcatalog
 
 import ai.metabind.a2ui.A2UIHost

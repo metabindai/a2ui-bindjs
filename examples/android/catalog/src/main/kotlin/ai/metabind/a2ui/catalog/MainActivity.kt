@@ -2,6 +2,7 @@
 //
 // A three-row menu, a list per group, and for each item a surface drawn by the catalog.
 // Nothing here describes what a component looks like; that arrives as A2UI.
+
 package ai.metabind.a2ui.catalog
 
 import ai.metabind.a2ui.A2UIHost

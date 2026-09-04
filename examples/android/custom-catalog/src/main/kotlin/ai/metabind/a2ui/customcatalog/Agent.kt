@@ -2,6 +2,7 @@
 //
 // Two surfaces. The first names only basic-catalog types; the second names `Rating`,
 // which the basic catalog does not have. Nothing in either says how anything looks.
+
 package ai.metabind.a2ui.customcatalog
 
 object Agent {

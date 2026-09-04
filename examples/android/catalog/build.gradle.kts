@@ -77,7 +77,6 @@ androidComponents {
 
 dependencies {
     implementation(project(":a2ui"))
-    implementation(libs.bindjs)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.android.compose.ui)
@@ -86,4 +85,5 @@ dependencies {
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(libs.junit)
 }

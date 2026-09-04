@@ -8,6 +8,7 @@
 // Props arrive under their A2UI names (`text`, `variant`, `value`), plus the two things
 // only the engine can supply: an `action` callback, and a `set<Prop>` writer for any prop
 // bound to the data model.
+
 package ai.metabind.a2ui.customcatalog
 
 object Brand {

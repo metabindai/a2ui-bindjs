@@ -3,6 +3,7 @@
 // Nothing here is native. Each entry is the `createSurface` an agent would emit, with the
 // data model it binds to — the same bytes the web playground and the iOS catalog example
 // receive — and it is the only description of that screen that exists.
+
 package ai.metabind.a2ui.catalog
 
 import android.content.Context
