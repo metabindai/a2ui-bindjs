@@ -39,6 +39,33 @@ const MESSAGES: AgentMessage[] = [
             },
         },
     },
+
+    // A second surface naming a type the basic catalog does not have. The agent writes
+    // `Rating` the way it writes `Button`; the catalog below is what makes it real.
+    {
+        version: 'v1.0',
+        createSurface: {
+            surfaceId: 'review',
+            components: [
+                { id: 'root', component: 'Card', child: 'body' },
+                { id: 'body', component: 'Column', children: ['title', 'stars', 'count', 'send'] },
+                { id: 'title', component: 'Text', variant: 'h2', text: 'Rate your stay' },
+                { id: 'stars', component: 'Rating', label: 'Stars', max: 5, value: { path: '/review/stars' } },
+                { id: 'count', component: 'Text', variant: 'caption', text: { path: '/review/stars' } },
+                { id: 'sendLabel', component: 'Text', text: 'Send review' },
+                {
+                    id: 'send',
+                    component: 'Button',
+                    variant: 'primary',
+                    child: 'sendLabel',
+                    action: { event: { name: 'send_review', context: { stars: { path: '/review/stars' } } } },
+                },
+            ],
+            dataModel: {
+                review: { stars: 3 },
+            },
+        },
+    },
 ]
 
 // ─── Custom components, written as BindJS source ─────────────────────────────
@@ -53,14 +80,18 @@ const MESSAGES: AgentMessage[] = [
 const BRAND_TEXT = `
 exports.default = defineComponent({
     body: (props) => {
+        // A bound value arrives as whatever the data model holds — the review surface
+        // binds a number — and the web Text throws on anything but a string.
+        const text = String(props.text ?? '')
+
         if (props.variant === 'h2') {
-            return Text({ markdown: props.text })
+            return Text({ markdown: text })
                 .font('title2')
                 .fontWeight('bold')
                 .foregroundStyle(Color('#5b21b6'))
         }
 
-        return Text({ markdown: props.text }).font('subheadline')
+        return Text({ markdown: text }).font('subheadline')
     },
     properties: {},
 })
@@ -81,19 +112,59 @@ exports.default = defineComponent({
 })
 `
 
-// Only the two being overridden are supplied. The renderer fills in whatever the catalog
+// A component the basic catalog does not have. `value` is bound to the data model, so the
+// engine injects `setValue` and nothing here holds state — tapping a star writes the
+// number back, and the caption bound to the same path repaints from it.
+const RATING = `
+exports.default = defineComponent({
+    metadata: { title: 'Rating', description: 'A star rating bound to a number in the data model.' },
+    properties: {
+        value: { type: 'number', defaultValue: 0 },
+        max: { type: 'number', defaultValue: 5 },
+        label: { type: 'string', defaultValue: '' },
+    },
+    body: (props) => {
+        const max = typeof props.max === 'number' && props.max > 0 ? Math.floor(props.max) : 5
+        const value = typeof props.value === 'number' ? props.value : 0
+        const setValue = typeof props.setValue === 'function' ? props.setValue : () => {}
+
+        const stars = []
+
+        for (let index = 0; index < max; index += 1) {
+            const filled = index < value
+            const star = Text(filled ? '★' : '☆').font('title2').foregroundStyle(Color(filled ? 'yellow' : 'quaternary'))
+
+            stars.push(Button(star, () => setValue(index + 1)))
+        }
+
+        const row = HStack({ spacing: 2 }, stars)
+
+        if (!props.label) {
+            return row
+        }
+
+        return VStack({ spacing: 4, alignment: 'leading' }, [
+            Text(String(props.label)).font('caption').foregroundStyle(Color('secondary')),
+            row,
+        ])
+    },
+})
+`
+
+// Only what the basic catalog lacks or is being overridden is supplied. The renderer fills in whatever the catalog
 // names and the runtime does not have — Card and Column still come from the built-in
 // catalog — and never replaces what is already registered, which is what makes an
 // override win.
 //
 // Both are module constants rather than built in the component, so their identity is
 // stable across renders.
-const BRAND_SOURCES = { BrandText: BRAND_TEXT, BrandButton: BRAND_BUTTON }
+const BRAND_SOURCES = { BrandText: BRAND_TEXT, BrandButton: BRAND_BUTTON, Rating: RATING }
 
 const BRAND_CATALOG: Catalog = {
     ...BASIC_CATALOG,
     Text: 'BrandText',
     Button: 'BrandButton',
+    Rating: 'Rating',
 }
 
 // ─── App ─────────────────────────────────────────────────────────────────────
@@ -115,6 +186,15 @@ export function App() {
                 <section className="panel">
                     <h2>Text and Button overridden</h2>
                     <A2UIRenderer store={store} sources={BRAND_SOURCES} catalog={BRAND_CATALOG} locale="en-US" />
+                </section>
+            </div>
+
+            <h1>A component the basic catalog does not have</h1>
+
+            <div className="panels">
+                <section className="panel">
+                    <h2>Rating, registered by this app</h2>
+                    <A2UIRenderer store={store} surfaceId="review" sources={BRAND_SOURCES} catalog={BRAND_CATALOG} locale="en-US" />
                 </section>
             </div>
         </main>

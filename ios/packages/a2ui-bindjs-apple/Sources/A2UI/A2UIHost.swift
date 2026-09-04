@@ -94,6 +94,22 @@ public final class A2UIHost: ObservableObject {
         bridge.invokeMethod("attach", withArguments: [runtime, ["locale": locale, "timeZone": timeZone]])
     }
 
+    // MARK: - Catalog
+
+    /// Registers BindJS components of the app's own and names the A2UI types they draw.
+    ///
+    /// `sources` is BindJS component name → source. `catalog` is A2UI type → BindJS
+    /// component name, and it is merged over the current catalog: name only the entries
+    /// you are adding or replacing, and the basic catalog stays underneath. Call it before
+    /// the first surface arrives.
+    ///
+    /// The same call adds a type the basic catalog lacks (`["Rating": "Rating"]`) or
+    /// restyles one it has (`["Button": "BrandButton"]`).
+    public func useCatalog(sources: [String: String], catalog: [String: String] = [:]) {
+        bridge?.invokeMethod("useCatalog", withArguments: [sources, catalog])
+        collectDiagnostics()
+    }
+
     // MARK: - Messages in
 
     /// Applies one agent message or an array of them, as JSON.

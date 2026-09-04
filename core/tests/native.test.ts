@@ -173,6 +173,38 @@ describe('native bridge', () => {
         expect(JSON.stringify(bridge.render('main')?.ast)).toContain('Grace')
     })
 
+    it('renders a component the basic catalog lacks, once the host adds it', () => {
+        const surface = {
+            version: 'v1.0',
+            createSurface: {
+                surfaceId: 'review',
+                components: [{ id: 'root', component: 'Rating', value: { path: '/stars' }, max: 5 }],
+                dataModel: { stars: 3 },
+            },
+        }
+
+        bridge.applyMessages([...MESSAGES, surface] as never)
+        expect(bridge.render('review')?.diagnostics[0]?.code).toBe('UNKNOWN_COMPONENT')
+
+        // One source, one catalog entry. The basic catalog stays underneath: Card, Column
+        // and the rest still resolve without being named again.
+        bridge.useCatalog(
+            {
+                Rating: `exports.default = defineComponent({
+                    body: (props) => Text('★'.repeat(props.value) + '☆'.repeat(props.max - props.value)),
+                    properties: {},
+                })`,
+            },
+            { Rating: 'Rating' }
+        )
+
+        const result = bridge.render('review')
+
+        expect(result?.diagnostics).toEqual([])
+        expect(JSON.stringify(result?.ast)).toContain('★★★☆☆')
+        expect(JSON.stringify(bridge.render('main')?.diagnostics)).toBe('[]')
+    })
+
     it('serialises for a host that only exchanges strings', () => {
         bridge.applyMessages(MESSAGES as never)
 

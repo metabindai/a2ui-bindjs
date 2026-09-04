@@ -67,9 +67,7 @@ native app as well — see `examples/ios/minimal`. Hand the same components to t
 once, before the first surface arrives:
 
 ```swift
-let a2ui = host.context.javaScriptContext.objectForKeyedSubscript("a2ui")!
-
-a2ui.invokeMethod("useCatalog", withArguments: [components])
+host.useCatalog(sources: components)
 ```
 
 Stick to components and modifiers BindJS has on every platform, and one package covers both.

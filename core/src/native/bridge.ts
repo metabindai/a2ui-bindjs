@@ -111,14 +111,21 @@ export class A2UINativeBridge {
         this.#options = { ...this.#options, ...options }
     }
 
-    /** Registers extra BindJS sources and points catalog entries at them. */
+    /**
+     * Registers extra BindJS sources and points catalog entries at them.
+     *
+     * `catalog` is merged over the current one, so a host adds a type or overrides an
+     * existing one by naming just that entry — the basic catalog stays underneath. It
+     * does not have to re-supply entries it is not changing, which a native caller could
+     * not do anyway: the basic catalog lives on this side of the bridge.
+     */
     useCatalog(sources: Record<string, string>, catalog?: Catalog): void {
         const runtime = this.#require()
 
         registerCatalog(runtime as RegistrarRuntime, { sources })
 
         if (catalog) {
-            this.#catalog = catalog
+            this.#catalog = { ...this.#catalog, ...catalog }
             this.#sessions.clear()
         }
     }
