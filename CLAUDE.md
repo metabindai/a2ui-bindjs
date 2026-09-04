@@ -267,10 +267,17 @@ Pass a `runtime` instead only when you have other BindJS components to register,
 renderers that should share hook state. `examples/web/custom-catalog` shows the short way;
 `react/src/runtime.ts` still exports `createA2UIRuntime` for the long one.
 
-Natively it is `host.useCatalog(sources:catalog:)`, before the first surface arrives. The
-bridge merges `catalog` over the basic one, so a host names only the entries it adds or
-replaces. The same call adds a type the basic catalog lacks — `examples/ios/custom-catalog`
+Natively it is `host.useCatalog(sources:catalog:)` on iOS and `host.useCatalog(sources,
+catalog)` on Android, before the first surface arrives. The bridge merges `catalog` over the
+basic one, so a host names only the entries it adds or replaces. The same call adds a type
+the basic catalog lacks — `examples/ios/custom-catalog`, `examples/android/custom-catalog`
 and the web example register a `Rating` from one shared source.
+
+The Android examples (`examples/android/{minimal,catalog,custom-catalog}`) build from
+`android/`, one Gradle wrapper for the platform. Their instrumented tests are the
+counterpart of the iOS `--check` runs and need a device or emulator; CI compiles them and
+nothing more. Locally, the Gradle wrapper needs a JDK: Android Studio's works,
+`JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"`.
 
 ## Rendering defaults
 

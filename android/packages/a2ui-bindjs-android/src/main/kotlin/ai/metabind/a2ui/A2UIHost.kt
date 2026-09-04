@@ -100,6 +100,26 @@ class A2UIHost(
     private val attachment = Mutex()
     private var attached = false
 
+    // MARK: - Catalog
+
+    /**
+     * Registers BindJS components of the app's own and names the A2UI types they draw.
+     *
+     * [sources] is BindJS component name → source. [catalog] is A2UI type → BindJS
+     * component name, merged over the current catalog: name only the entries you are
+     * adding or replacing, and the basic catalog stays underneath. Call it before the
+     * first surface arrives.
+     *
+     * The same call adds a type the basic catalog lacks (`"Rating" to "Rating"`) or
+     * restyles one it has (`"Button" to "BrandButton"`). The sources are the strings the
+     * web and Apple renderers take, so one component covers every platform.
+     */
+    suspend fun useCatalog(sources: Map<String, String>, catalog: Map<String, String> = emptyMap()) {
+        attach()
+
+        evaluate("a2ui.useCatalog(${JSONObject(sources)}, ${JSONObject(catalog)});")
+    }
+
     // MARK: - Messages in
 
     /** Applies one agent message or an array of them, as JSON. */

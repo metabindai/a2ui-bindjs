@@ -18,8 +18,23 @@ host.actions.collect { action -> … }          // the agent's half of the conve
 A2UISurfaceView(host = host)                  // in a composable
 ```
 
-`setValue`, `reset`, `surfaceIds`, `diagnostics` and `takeErrors` round it out; nothing
-else needs to be public.
+`setValue`, `reset`, `surfaceIds`, `diagnostics`, `takeErrors` and `useCatalog` round it
+out; nothing else needs to be public.
+
+## Your own components
+
+```kotlin
+host.useCatalog(
+    sources = mapOf("Rating" to ratingSource, "BrandButton" to buttonSource),  // BindJS name → source
+    catalog = mapOf("Rating" to "Rating", "Button" to "BrandButton"),            // A2UI type → BindJS name
+)
+```
+
+Call it before the first surface arrives. `catalog` is merged over the basic catalog, so
+name only what you are adding or replacing — the rest still comes from the bundle. The
+sources are the same strings the web and Apple renderers take, so one component covers
+all three; `examples/android/custom-catalog` shares its sources with the iOS and web
+examples verbatim.
 
 ## Why the build is rooted here
 
@@ -28,8 +43,10 @@ how SwiftPM resolves a package by URL. Gradle has no such rule, and a settings f
 the root would make every contributor's IDE offer to import an Android build to work on
 the TypeScript.
 
-The example under `examples/android/minimal` is included from here rather than carrying
-its own build, so the Android side has one wrapper and one `./gradlew`.
+The examples under `examples/android/` are included from here rather than carrying their
+own builds, so the Android side has one wrapper and one `./gradlew`: `minimal`, one
+agent-authored screen; `catalog`, every basic-catalog component and every official example
+surface; `custom-catalog`, a component of the app's own named by the agent.
 
 ## The two things a host has to get right
 
