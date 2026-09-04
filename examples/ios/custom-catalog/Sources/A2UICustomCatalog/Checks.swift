@@ -2,7 +2,8 @@
 //
 // Proves the catalog is what makes the difference, with no window: the host without it
 // cannot draw `Rating`, the host with it can, and a tap on a star writes through to the
-// data model. Run with `swift run A2UICustomCatalog --check`.
+// data model. The flight search then does the same for a type carrying state of its own.
+// Run with `swift run A2UICustomCatalog --check`.
 
 import Foundation
 import A2UI
@@ -52,6 +53,42 @@ func runChecks() -> Bool {
     // The whole native path, the way `A2UISurfaceView` takes it.
     let view = branded.context.view(id: "review") { _ in branded.ast(for: "review") }
     report("7. native decode", view != nil, "ok")
+
+    // The flight search: one type of the app's own, templated over three rows.
+    let flights = A2UIHost(locale: "en-US")
+    flights.useCatalog(sources: Flights.sources, catalog: Flights.catalog)
+    flights.apply(Flights.messages)
+
+    let surface = render(flights, "flights")
+
+    report("8. flights", flights.diagnostics.isEmpty, "no diagnostics")
+    report("9. rows bound", surface.contains("\"count\":3"), "a ForEach over 3 rows")
+
+    // A card outside a template, so its body is expanded into the tree rather than left
+    // to the row callback. Everything below reads it.
+    let single = A2UIHost(locale: "en-US")
+    single.useCatalog(sources: Flights.sources, catalog: Flights.catalog)
+    single.apply(Flights.singleCard)
+
+    // `Color('#f59e0b')` crosses the bridge as channels, not as the hex it was written
+    // as, so the status dot is checked by the colour it ended up with.
+    let card = render(single, "one")
+    let amber = card.contains("\"r\":245,\"g\":158,\"b\":11")
+    let drawn = card.contains("United Airlines") && card.contains("$289") && amber
+
+    report("10. card draws", drawn, "airline, price, and Delayed's colour")
+
+    // The type is the app's. A host that never registered it has no such component.
+    let plain = A2UIHost(locale: "en-US")
+    let known = { (host: A2UIHost) in
+        host.context.javaScriptContext.evaluateScript("typeof runtime.components['FlightCard']")?.toString()
+    }
+
+    report("11. registered by us", known(plain) == "undefined" && known(flights) == "string", "only on the host that asked")
+
+    // The whole native path again, this time over a list the rows are built lazily into.
+    let flightsView = flights.context.view(id: "flights") { _ in flights.ast(for: "flights") }
+    report("12. native decode", flightsView != nil, "ok")
 
     print(failures == 0 ? "all checks ok" : "\(failures) check(s) failed")
 

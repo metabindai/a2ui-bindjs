@@ -16,8 +16,8 @@ export default defineComponent({
             .padding(16)
             .frame({ maxWidth: Infinity, alignment: "leading" })
             .background(Color("background"))
-            .cornerRadius(12)
-            .shadow()
+            .cornerRadius(16)
+            .shadow({ y: 8, radius: 12, color: Color("black").opacity(0.14) })
     },
 
     previews: [Self({}, [Text("Card contents")]).previewName("Default")],
