@@ -5,6 +5,11 @@
 
 const ALIGNMENT = { start: "leading", center: "center", end: "trailing", stretch: "leading" }
 
+// The stack sizes to its widest child, so its own placement inside the full-width frame
+// has to follow `align` too — pinned leading, a centred stack of short children sits on
+// the left of the card with its children centred on each other, which reads as nothing.
+const FRAME_ALIGNMENT = { start: "leading", center: "center", end: "trailing", stretch: "leading" }
+
 const interleave = (items) => items.flatMap((child, index) => (index === 0 ? [child] : [Spacer(), child]))
 
 export default defineComponent({
@@ -20,22 +25,23 @@ export default defineComponent({
             options: ["start", "center", "end", "spaceBetween", "spaceAround", "spaceEvenly", "stretch"],
             defaultValue: "start",
         },
-        align: { type: "enum", options: ["start", "center", "end", "stretch"], defaultValue: "start" },
+        align: { type: "enum", options: ["start", "center", "end", "stretch"], defaultValue: "stretch" },
         spacing: { type: "number", defaultValue: 12 },
     },
 
     body: (props, children) => {
         const justify = props.justify ?? "start"
 
-        // `weight` lets a child claim proportional space. Only the engine can see each
-        // child node's weight, so it passes them down as `childWeights`.
+        // `weight` lets a child claim a share of the height — equal shares, for the reasons
+        // in A2UIRow. Only the engine can see each child node's weight, so it passes them
+        // down as `childWeights`.
         const weights = Array.isArray(props.childWeights) ? props.childWeights : []
 
         const items = (children ?? []).map((child, index) => {
             const weight = weights[index]
 
             if (typeof weight === "number" && weight > 0) {
-                return child.frame({ maxHeight: Infinity }).layoutPriority(weight)
+                return child.frame({ maxHeight: Infinity, alignment: "top" })
             }
 
             if (justify === "stretch") {
@@ -61,8 +67,8 @@ export default defineComponent({
         const distributed = justify === "spaceBetween" || justify === "spaceAround" || justify === "spaceEvenly"
         const spacing = distributed ? 0 : (props.spacing ?? 12)
 
-        return VStack({ spacing, alignment: ALIGNMENT[props.align] || "leading" }, laidOut)
-            .frame({ maxWidth: Infinity, alignment: "leading" })
+        return VStack({ spacing, alignment: ALIGNMENT[props.align] || ALIGNMENT.stretch }, laidOut)
+            .frame({ maxWidth: Infinity, alignment: FRAME_ALIGNMENT[props.align] || FRAME_ALIGNMENT.stretch })
     },
 
     previews: [Self({}, [Text("First"), Text("Second"), Text("Third")]).previewName("Default")],

@@ -16,9 +16,19 @@
  */
 const asText = (value) => (value === null || value === undefined ? "" : String(value))
 
-/** A rule the engine resolved to `false`; anything else is valid or not a rule at all. */
+/**
+ * A rule's `condition` arrives one of two ways: a boolean, when it was a binding or a logic
+ * function, or a `{ valid, message }` result from a validation function such as
+ * `required` or `email`. Either spelling of failure counts, and the rule's own message
+ * wins over the function's.
+ */
+const isFailure = (condition) =>
+    condition === false || (condition !== null && typeof condition === "object" && condition.valid === false)
+
 const failedChecks = (checks) =>
-    (Array.isArray(checks) ? checks : []).filter((rule) => rule && typeof rule === "object" && rule.condition === false)
+    (Array.isArray(checks) ? checks : [])
+        .filter((rule) => rule && typeof rule === "object" && isFailure(rule.condition))
+        .map((rule) => ({ message: rule.message ?? (rule.condition && rule.condition.message) ?? "Invalid" }))
 
 /** Whole numbers read as such; anything else keeps its fraction. */
 const formatValue = (value) => (Number.isInteger(value) ? String(value) : String(Math.round(value * 100) / 100))
