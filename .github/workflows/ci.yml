@@ -178,12 +178,18 @@ jobs:
                   git diff --exit-code -- android/packages/a2ui-bindjs-android/src/main/res/raw/a2ui_native.js
 
             # bindjs-android lives in GitHub Packages, which needs a token even to read.
-            - name: Build the library and the example
+            # The instrumented test APKs are built too, so a test that no longer compiles
+            # fails here even though nothing can run it on the hosted runner.
+            - name: Build the library and the examples
               working-directory: android
               env:
                   GITHUB_ACTOR: ${{ github.actor }}
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              run: ./gradlew :a2ui:assembleDebug :minimal:assembleDebug
+              run: >
+                  ./gradlew :a2ui:assembleDebug
+                  :minimal:assembleDebug
+                  :catalog:assembleDebug :catalog:assembleDebugAndroidTest
+                  :custom-catalog:assembleDebug :custom-catalog:assembleDebugAndroidTest
 
             # DISABLED: the emulator never finishes booting on the hosted runner
             # ("Timeout waiting for emulator to boot"), so this step failed every run

@@ -59,6 +59,12 @@ project(":a2ui").projectDir = file("packages/a2ui-bindjs-android")
 include(":minimal")
 project(":minimal").projectDir = file("../examples/android/minimal")
 
+include(":catalog")
+project(":catalog").projectDir = file("../examples/android/catalog")
+
+include(":custom-catalog")
+project(":custom-catalog").projectDir = file("../examples/android/custom-catalog")
+
 // To develop against a local bindjs-android checkout instead of a published artifact,
 // clone it beside this repository and uncomment:
 //
