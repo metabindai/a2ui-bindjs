@@ -30,18 +30,14 @@
 const asText = (value) => (value === null || value === undefined ? '' : String(value))
 
 /**
- * A rule's `condition` arrives one of two ways: a boolean, when it was a binding or a logic
- * function, or a `{ valid, message }` result from a validation function such as
- * `required` or `email`. Either spelling of failure counts, and the rule's own message
- * wins over the function's.
+ * The rules whose `condition` the engine resolved to `false`. A condition is a boolean
+ * whichever way it was written — a binding, a logic function, or a validation function
+ * such as `required` — and the rule carries the message.
  */
-const isFailure = (condition) =>
-    condition === false || (condition !== null && typeof condition === 'object' && condition.valid === false)
-
 const failedChecks = (checks) =>
     (Array.isArray(checks) ? checks : [])
-        .filter((rule) => rule && typeof rule === 'object' && isFailure(rule.condition))
-        .map((rule) => ({ message: rule.message ?? (rule.condition && rule.condition.message) ?? 'Invalid' }))
+        .filter((rule) => rule && typeof rule === 'object' && rule.condition === false)
+        .map((rule) => ({ message: rule.message === undefined || rule.message === null ? '' : String(rule.message) }))
 
 /** More than this in a segmented control and the labels stop being readable. */
 const SEGMENTED_LIMIT = 5
@@ -101,7 +97,7 @@ export default defineComponent({
               ]
             : []
 
-        const error = failed.length > 0 ? [Text(asText(failed[0].message)).font('caption').foregroundStyle(Color('red'))] : []
+        const error = failed.length > 0 && failed[0].message ? [Text(failed[0].message).font('caption').foregroundStyle(Color('red'))] : []
 
         const wrap = (control) =>
             VStack({ spacing: 8, alignment: 'leading' }, [...caption, ...search, ...control, ...error]).frame({

@@ -1,23 +1,16 @@
 /**
  * Validation functions: `required`, `regex`, `length`, `numeric`, `email`.
- * Each returns a `ValidationResult` rather than a display string.
+ *
+ * Each returns a boolean, as the spec declares. A `checks` rule carries its own
+ * `message`, and the logic functions (`and`, `or`, `not`) coerce their operands, so a
+ * boolean is the only return type that composes — the login example gates its button on
+ * `and([email(...), length(...)])`, which an object result made unconditionally true.
  */
 import type { JsonValue } from '../../protocol/types.js'
 import { toDisplayString, toLength, toNumber } from '../coerce.js'
-import type { FunctionInput, ValidationResult } from '../types.js'
+import type { FunctionInput } from '../types.js'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-function pass(): ValidationResult {
-    return { valid: true }
-}
-
-/** Uses the caller-supplied `message` when present, so catalogs can localise failures. */
-function fail(args: Record<string, JsonValue | undefined>, fallback: string): ValidationResult {
-    const message = typeof args.message === 'string' ? args.message : fallback
-
-    return { valid: false, message }
-}
 
 function isEmpty(value: JsonValue | undefined): boolean {
     if (value === null || value === undefined) {
@@ -41,114 +34,101 @@ function isEmpty(value: JsonValue | undefined): boolean {
 
 const required: FunctionInput = {
     name: 'required',
-    returnType: 'validationResult',
-    description: 'Fails when the value is null, undefined, blank, or an empty array.',
+    returnType: 'boolean',
+    description: 'False when the value is null, undefined, blank, or an empty array.',
 
     invoke(args) {
-        if (isEmpty(args.value)) {
-            return fail(args, 'This field is required.')
-        }
-
-        return pass()
+        return !isEmpty(args.value)
     },
 }
 
 const regex: FunctionInput = {
     name: 'regex',
-    returnType: 'validationResult',
-    description: 'Fails when the value does not match the given pattern.',
+    returnType: 'boolean',
+    description: 'True when the value matches the given pattern.',
 
     invoke(args) {
         const pattern = args.pattern
 
         if (typeof pattern !== 'string') {
-            return fail(args, 'regex requires a string `pattern` argument.')
+            return false
         }
 
         const flags = typeof args.flags === 'string' ? args.flags : undefined
-        const text = toDisplayString(args.value)
 
         try {
-            if (new RegExp(pattern, flags).test(text)) {
-                return pass()
-            }
-        } catch (error) {
-            return fail(args, `Invalid pattern: ${(error as Error).message}`)
+            return new RegExp(pattern, flags).test(toDisplayString(args.value))
+        } catch {
+            return false
         }
-
-        return fail(args, 'This value is not in the expected format.')
     },
 }
 
 const length: FunctionInput = {
     name: 'length',
-    returnType: 'validationResult',
-    description: 'Checks the length of a string or array against min / max.',
+    returnType: 'boolean',
+    description: 'True when the length of a string or array is within min / max.',
 
     invoke(args) {
         const size = toLength(args.value)
 
         if (size === undefined) {
-            return fail(args, 'This value has no length.')
+            return false
         }
 
         const min = toNumber(args.min)
         const max = toNumber(args.max)
 
         if (min !== undefined && size < min) {
-            return fail(args, `Must be at least ${min} characters.`)
+            return false
         }
 
         if (max !== undefined && size > max) {
-            return fail(args, `Must be at most ${max} characters.`)
+            return false
         }
 
-        return pass()
+        return true
     },
 }
 
 const numeric: FunctionInput = {
     name: 'numeric',
-    returnType: 'validationResult',
-    description: 'Checks that the value is a number, optionally an integer within min / max.',
+    returnType: 'boolean',
+    description: 'True when the value is a number, optionally an integer within min / max.',
 
     invoke(args) {
         const value = toNumber(args.value)
 
         if (value === undefined) {
-            return fail(args, 'Must be a number.')
+            return false
         }
 
         if (args.integer === true && !Number.isInteger(value)) {
-            return fail(args, 'Must be a whole number.')
+            return false
         }
 
         const min = toNumber(args.min)
         const max = toNumber(args.max)
 
         if (min !== undefined && value < min) {
-            return fail(args, `Must be at least ${min}.`)
+            return false
         }
 
         if (max !== undefined && value > max) {
-            return fail(args, `Must be at most ${max}.`)
+            return false
         }
 
-        return pass()
+        return true
     },
 }
 
 const email: FunctionInput = {
     name: 'email',
-    returnType: 'validationResult',
-    description: 'Checks that the value looks like an email address.',
+    returnType: 'boolean',
+    description: 'True when the value looks like an email address.',
 
     invoke(args) {
-        if (EMAIL_PATTERN.test(toDisplayString(args.value))) {
-            return pass()
-        }
-
-        return fail(args, 'Enter a valid email address.')
+        return EMAIL_PATTERN.test(toDisplayString(args.value))
     },
 }
 
