@@ -80,7 +80,6 @@ export function observeHookState(runtime: BindJSRuntimeLike): number | undefined
     const wrapper = (...args: unknown[]): unknown => {
         state.revision += 1
 
-
         // The host's own repaint first, then ours. bindjs-react repaints the tree it
         // built and stops there; nothing in that path re-runs the A2UI engine, so a
         // memoised subtree would go on being served after the state under it moved.
