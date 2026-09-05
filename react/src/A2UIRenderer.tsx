@@ -152,8 +152,6 @@ export function A2UIRenderer(props: A2UIRendererProps) {
     const ownRuntime = useA2UIRuntime()
     const runtime = providedRuntime ?? ownRuntime
 
-
-
     const firstSurfaceId = useFirstSurfaceId(store)
     const surfaceId = requestedSurfaceId ?? firstSurfaceId
 
