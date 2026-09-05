@@ -55,6 +55,7 @@ import {
     type RenderOptions,
     type RenderResult,
 } from './types.js'
+import { observeHookState } from './hookState.js'
 
 /** Tags each built component so its subtree can be recovered from the unwrapped AST. */
 const KEY_PROP = '__a2uiKey'
@@ -101,6 +102,12 @@ export class RenderSession {
     #catalogs?: unknown
     #registry?: unknown
 
+    /**
+     * The hook revision the cache was filled at, or `undefined` when this runtime gives
+     * us no way to watch its hooks — in which case nothing is cached at all.
+     */
+    #hookRevision?: number
+
     #diagnostics: Diagnostic[] = []
     #nodeCount = 0
     #reused = 0
@@ -121,6 +128,11 @@ export class RenderSession {
         this.#nodeCount = 0
         this.#reused = 0
 
+        // Checked every pass, not once: a host assigning its own `needsRerender` after we
+        // wrapped would otherwise take our wrapper off and the cache would go quietly
+        // stale. `undefined` means this runtime cannot be watched, and nothing is cached.
+        const hookRevision = observeHookState(options.runtime)
+
         // Anything that changes how every node renders invalidates everything. A host
         // that passes a fresh catalog object each render simply gets no reuse.
         const signature = [options.surface.id, options.locale, options.timeZone].join(' ')
@@ -128,13 +140,17 @@ export class RenderSession {
             signature !== this.#signature ||
             options.catalog !== this.#catalog ||
             options.catalogs !== this.#catalogs ||
-            options.registry !== this.#registry
+            options.registry !== this.#registry ||
+            // A hook fired since the last pass. Which component held it does not matter:
+            // whatever it draws now is not what any cached subtree was built from.
+            hookRevision !== this.#hookRevision
 
         if (stale) {
             this.#signature = signature
             this.#catalog = options.catalog
             this.#catalogs = options.catalogs
             this.#registry = options.registry
+            this.#hookRevision = hookRevision
             this.#cache.clear()
         }
 
@@ -144,6 +160,12 @@ export class RenderSession {
             this.#report('MISSING_ROOT', `Surface '${options.surface.id}' has no 'root' component.`)
 
             return { ast: undefined, diagnostics: this.#diagnostics, nodeCount: 0, reused: 0 }
+        }
+
+        // Nothing is carried over when reuse is off, so a host that cannot promise the
+        // engine is re-entered after renderer state moves is never served a stale body.
+        if (options.memoise === false) {
+            this.#cache.clear()
         }
 
         const built = this.#build(ROOT_COMPONENT_ID, '/', undefined, 0, new Set())
@@ -353,10 +375,10 @@ export class RenderSession {
             props.childWeights = slots.weights
         }
 
-        // A stateful component's output can change without any of its inputs changing,
-        // so it is never cached — and because its parent then has a child with no cache
-        // entry, the parent rebuilds too. Correctness falls out of the same check.
-        if (!entry.stateful) {
+        // Every component is cached, including one holding a hook: a setter firing clears
+        // the whole cache, so the next pass reaches its body again. The one runtime we
+        // cannot cache for is one whose hooks we were unable to watch at all.
+        if (this.#hookRevision !== undefined && this.#options.memoise !== false) {
             props[KEY_PROP] = key
             this.#pending.set(key, { definition: node, reads, children })
         }
