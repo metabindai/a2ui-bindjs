@@ -625,9 +625,10 @@ describe('parity with the official SwiftUI catalog', () => {
         })
     })
 
-    it('marks ChoicePicker stateful so its filter text can live in it', () => {
-        expect(catalogEntry(BASIC_CATALOG.ChoicePicker)!.stateful).toBe(true)
-
+    // The filter text has nowhere to live in the A2UI properties, so it is a BindJS
+    // hook — which the engine notices for itself now rather than being told. Nothing on
+    // the catalog entry says so; `engine/hookState.ts` watches the runtime instead.
+    it('keeps ChoicePicker filter text in the component', () => {
         const text = rendered([
             { id: 'root', component: 'ChoicePicker', filterable: true, value: [], options: [{ label: 'A', value: 'a' }] },
         ])

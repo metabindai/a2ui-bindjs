@@ -42,6 +42,17 @@ export interface BindJSRuntimeLike {
      * before calling it.
      */
     components?: Record<string, unknown>
+
+    /**
+     * Called by every BindJS hook setter — `useState`, `useStore`, `useAppState` — and by
+     * nothing else. Hosts assign it to schedule their own repaint; the engine wraps it to
+     * learn that a component redraws differently with no A2UI input having changed, which
+     * is the only way it can know to drop a memoised subtree.
+     *
+     * Optional, so a minimal runtime still renders. Without it the engine memoises
+     * nothing, because it would have no way to notice the subtree had gone stale.
+     */
+    needsRerender?: (...args: never[]) => unknown
 }
 
 // ---------------------------------------------------------------------------
@@ -61,13 +72,6 @@ export type ChildSlot =
 export interface CatalogEntry {
     /** Registered BindJS component name. */
     component: string
-
-    /**
-     * Set when the component keeps its own state (a BindJS `useState`), so its output
-     * can change without any A2UI input changing. Such a component is never memoised —
-     * a cached subtree would freeze it in whatever state it was last built with.
-     */
-    stateful?: boolean
 
     /**
      * Child-bearing properties for this type. Defaults to `child` and `children`
@@ -151,6 +155,16 @@ export interface RenderOptions {
      * v0.9 identifiers, which describe the same components.
      */
     defaultCatalogId?: string | readonly string[]
+
+    /**
+     * Reuse unchanged subtrees between renders. On by default.
+     *
+     * Turn it off when a host cannot guarantee the engine is re-entered after renderer
+     * state moves. A memoised subtree comes back as a built AST whose body does not run
+     * again, so a component holding a BindJS hook keeps drawing what it was built with —
+     * and the symptom is the bad kind, a surface that looks right and does nothing.
+     */
+    memoise?: boolean
 
     /** Functions available to `{ call }` values. */
     registry?: FunctionRegistry

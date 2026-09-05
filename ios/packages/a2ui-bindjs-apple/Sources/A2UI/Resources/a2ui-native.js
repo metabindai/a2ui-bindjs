@@ -110,14 +110,12 @@ var A2UI = (() => {
   var BASIC_CATALOG_ID_V0_9 = "https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json";
   var BASIC_CATALOG_ID_V0_9_FLAT = "https://a2ui.org/specification/v0_9/basic_catalog.json";
   var BASIC_CATALOG_IDS = [BASIC_CATALOG_ID, BASIC_CATALOG_ID_V0_9, BASIC_CATALOG_ID_V0_9_FLAT];
-  var STATEFUL_TYPES = /* @__PURE__ */ new Set(["ChoicePicker", "Modal", "Tabs"]);
   var BASIC_CATALOG = Object.fromEntries(
     BASIC_CATALOG_COMPONENTS.map((type) => [
       type,
       {
         component: `A2UI${type}`,
-        slots: BASIC_CATALOG_SLOTS[type] ?? [],
-        stateful: STATEFUL_TYPES.has(type)
+        slots: BASIC_CATALOG_SLOTS[type] ?? []
       }
     ])
   );
@@ -434,9 +432,43 @@ exports.default = defineComponent({
   var DEFAULT_MAX_DEPTH = 50;
   var DEFAULT_MAX_NODES = 1e4;
 
+  // src/engine/hookState.ts
+  var OBSERVED = /* @__PURE__ */ new WeakMap();
+  function observeHookState(runtime) {
+    const installed = OBSERVED.get(runtime);
+    if (installed !== void 0) {
+      return installed.revision;
+    }
+    const target = runtime;
+    if (typeof target.needsRerender !== "function") {
+      return void 0;
+    }
+    const state = { revision: 0, delegate: target.needsRerender, listeners: /* @__PURE__ */ new Set() };
+    const wrapper = (...args) => {
+      state.revision += 1;
+      const result = state.delegate.apply(runtime, args);
+      for (const listener of state.listeners) {
+        listener();
+      }
+      return result;
+    };
+    Object.defineProperty(runtime, "needsRerender", {
+      configurable: true,
+      get: () => wrapper,
+      // A host assigning its own handler replaces the delegate, never the wrapper.
+      set: (value) => {
+        if (typeof value === "function") {
+          state.delegate = value;
+        }
+      }
+    });
+    OBSERVED.set(runtime, state);
+    return state.revision;
+  }
+
   // src/engine/render.ts
   var KEY_PROP = "__a2uiKey";
-  var _cache, _pending, _options, _signature, _catalog, _catalogs, _registry, _diagnostics, _nodeCount, _reused, _maxDepth, _maxNodes, _RenderSession_instances, keyOf_fn, isValid_fn, harvest_fn, build_fn, catalogFor_fn, buildSlots_fn, buildObjectList_fn, buildChildList_fn, buildTemplate_fn, propsFor_fn, contextFor_fn, dispatch_fn, weightsFor_fn, reuse_fn, placeholder_fn, present_fn, report_fn;
+  var _cache, _pending, _options, _signature, _catalog, _catalogs, _registry, _hookRevision, _diagnostics, _nodeCount, _reused, _maxDepth, _maxNodes, _RenderSession_instances, keyOf_fn, isValid_fn, harvest_fn, build_fn, catalogFor_fn, buildSlots_fn, buildObjectList_fn, buildChildList_fn, buildTemplate_fn, propsFor_fn, contextFor_fn, dispatch_fn, weightsFor_fn, reuse_fn, placeholder_fn, present_fn, report_fn;
   var RenderSession = class {
     constructor() {
       __privateAdd(this, _RenderSession_instances);
@@ -447,6 +479,11 @@ exports.default = defineComponent({
       __privateAdd(this, _catalog);
       __privateAdd(this, _catalogs);
       __privateAdd(this, _registry);
+      /**
+       * The hook revision the cache was filled at, or `undefined` when this runtime gives
+       * us no way to watch its hooks — in which case nothing is cached at all.
+       */
+      __privateAdd(this, _hookRevision);
       __privateAdd(this, _diagnostics, []);
       __privateAdd(this, _nodeCount, 0);
       __privateAdd(this, _reused, 0);
@@ -465,19 +502,26 @@ exports.default = defineComponent({
       __privateSet(this, _pending, /* @__PURE__ */ new Map());
       __privateSet(this, _nodeCount, 0);
       __privateSet(this, _reused, 0);
+      const hookRevision = observeHookState(options.runtime);
       const signature = [options.surface.id, options.locale, options.timeZone].join(" ");
-      const stale = signature !== __privateGet(this, _signature) || options.catalog !== __privateGet(this, _catalog) || options.catalogs !== __privateGet(this, _catalogs) || options.registry !== __privateGet(this, _registry);
+      const stale = signature !== __privateGet(this, _signature) || options.catalog !== __privateGet(this, _catalog) || options.catalogs !== __privateGet(this, _catalogs) || options.registry !== __privateGet(this, _registry) || // A hook fired since the last pass. Which component held it does not matter:
+      // whatever it draws now is not what any cached subtree was built from.
+      hookRevision !== __privateGet(this, _hookRevision);
       if (stale) {
         __privateSet(this, _signature, signature);
         __privateSet(this, _catalog, options.catalog);
         __privateSet(this, _catalogs, options.catalogs);
         __privateSet(this, _registry, options.registry);
+        __privateSet(this, _hookRevision, hookRevision);
         __privateGet(this, _cache).clear();
       }
       const root = options.surface.components.get(ROOT_COMPONENT_ID);
       if (!root) {
         __privateMethod(this, _RenderSession_instances, report_fn).call(this, "MISSING_ROOT", `Surface '${options.surface.id}' has no 'root' component.`);
         return { ast: void 0, diagnostics: __privateGet(this, _diagnostics), nodeCount: 0, reused: 0 };
+      }
+      if (options.memoise === false) {
+        __privateGet(this, _cache).clear();
       }
       const built = __privateMethod(this, _RenderSession_instances, build_fn).call(this, ROOT_COMPONENT_ID, "/", void 0, 0, /* @__PURE__ */ new Set());
       const ast = built === void 0 ? void 0 : __privateGet(this, _options).runtime.unwrapComponentAST(built);
@@ -492,6 +536,7 @@ exports.default = defineComponent({
   _catalog = new WeakMap();
   _catalogs = new WeakMap();
   _registry = new WeakMap();
+  _hookRevision = new WeakMap();
   _diagnostics = new WeakMap();
   _nodeCount = new WeakMap();
   _reused = new WeakMap();
@@ -620,7 +665,7 @@ exports.default = defineComponent({
     if (slots.weights) {
       props.childWeights = slots.weights;
     }
-    if (!entry.stateful) {
+    if (__privateGet(this, _hookRevision) !== void 0 && __privateGet(this, _options).memoise !== false) {
       props[KEY_PROP] = key;
       __privateGet(this, _pending).set(key, { definition: node, reads, children });
     }

@@ -1,8 +1,8 @@
-// The example's own state: three hosts, and the messages each was given.
+// The example's own state: five hosts, and the messages each was given.
 //
-// Three contexts, and therefore three runtimes, on purpose: each host renders on its own
-// and they never exchange handler ids. An app that also renders BindJS of its own would
-// pass that context to one host, not all three.
+// Five contexts, and therefore five runtimes, on purpose: each host renders on its own and
+// they never exchange handler ids. An app that also renders BindJS of its own would pass
+// that context to one host, not all five.
 
 import Combine
 import Foundation
@@ -21,6 +21,19 @@ final class Demo: ObservableObject {
     /// `FlightCard` is new.
     let flights = A2UIHost(locale: "en-US")
 
+    /// The sales dashboard: the basic catalog plus `Chart`, named three times on one
+    /// surface for three different shapes.
+    let dashboard = A2UIHost(locale: "en-US")
+
+    /// The habitat sort: the basic catalog plus `SortBoard`, one type carrying a whole
+    /// interaction.
+    let habitat = A2UIHost(locale: "en-US")
+
+    /// Every host, in the order the index lists them.
+    private var hosts: [A2UIHost] {
+        [builtIn, branded, flights, dashboard, habitat]
+    }
+
     /// What the surfaces have dispatched, newest first.
     ///
     /// Recorded against the host and surface it came from, so a screen shows only its own:
@@ -34,8 +47,10 @@ final class Demo: ObservableObject {
     init() {
         branded.useCatalog(sources: Brand.sources, catalog: Brand.catalog)
         flights.useCatalog(sources: Flights.sources, catalog: Flights.catalog)
+        dashboard.useCatalog(sources: Dashboard.sources, catalog: Dashboard.catalog)
+        habitat.useCatalog(sources: Habitat.sources, catalog: Habitat.catalog)
 
-        for host in [builtIn, branded, flights] {
+        for host in hosts {
             // The id is captured by value: the closure is stored on the host, so holding
             // the host itself here would be a cycle.
             let hostId = ObjectIdentifier(host)
@@ -57,7 +72,7 @@ final class Demo: ObservableObject {
     func reset() {
         actions = []
 
-        for host in [builtIn, branded, flights] {
+        for host in hosts {
             host.reset()
         }
 
@@ -69,6 +84,8 @@ final class Demo: ObservableObject {
         builtIn.apply(Agent.messages)
         branded.apply(Agent.messages)
         flights.apply(Flights.messages)
+        dashboard.apply(Dashboard.messages)
+        habitat.apply(Habitat.messages)
     }
 
     /// Everything the surfaces on one screen have dispatched, newest first.

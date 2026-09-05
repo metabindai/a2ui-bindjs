@@ -59,6 +59,19 @@ export interface A2UIRendererProps {
     /** A2UI type → registered component name. Defaults to the basic catalog. */
     catalog?: Catalog
 
+    /**
+     * Reuse unchanged subtrees between renders. **Off by default here**, unlike the
+     * engine's own default.
+     *
+     * A memoised subtree comes back as a built AST whose body does not run again. The
+     * native hosts re-enter the engine whenever renderer state moves, so they rebuild it;
+     * on the web we have not established what does, and with reuse on the two catalog
+     * components that hold their own state — a chart's selection, a card following a
+     * finger — draw correctly and then ignore every gesture. Turn it on if you have
+     * measured that you need it and your surfaces hold no renderer state.
+     */
+    memoise?: boolean
+
     /** Defaults to the standard function set. */
     registry?: FunctionRegistry
 
@@ -121,6 +134,7 @@ export function A2UIRenderer(props: A2UIRendererProps) {
         store,
         surfaceId: requestedSurfaceId,
         catalog = BASIC_CATALOG,
+        memoise = false,
         registry,
         locale,
         timeZone,
@@ -137,6 +151,8 @@ export function A2UIRenderer(props: A2UIRendererProps) {
     // Always created so hook order stays stable; only used when none was passed.
     const ownRuntime = useA2UIRuntime()
     const runtime = providedRuntime ?? ownRuntime
+
+
 
     const firstSurfaceId = useFirstSurfaceId(store)
     const surfaceId = requestedSurfaceId ?? firstSurfaceId
@@ -182,6 +198,7 @@ export function A2UIRenderer(props: A2UIRendererProps) {
             surface: liveSurface,
             catalog: current.catalog ?? BASIC_CATALOG,
             registry: current.registry ?? defaultRegistry,
+            memoise: current.memoise ?? false,
             locale: current.locale,
             timeZone: current.timeZone,
             onAction: current.onAction,

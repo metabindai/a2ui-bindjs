@@ -7,11 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2A6793CC2D4C1FFB57ED1D0A /* Dashboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D006C38D441CFE51CAABA28 /* Dashboard.swift */; };
 		2D99AF392EAA84416494BB8F /* A2UICustomCatalogApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 198987A59C6CE2338AE657B6 /* A2UICustomCatalogApp.swift */; };
 		32D95D1EC486F6665C309B65 /* A2UI in Frameworks */ = {isa = PBXBuildFile; productRef = BBFC03D78CF0BD7CEEDEF2A7 /* A2UI */; };
 		47C34C0BD898C0966BFBD1CE /* Demo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01C69E04C90EC1CDF152C599 /* Demo.swift */; };
 		4CE05F85C1EA0E93563EF849 /* Checks.swift in Sources */ = {isa = PBXBuildFile; fileRef = A29F58E6D0C04CEE61774BBF /* Checks.swift */; };
 		B42F68C8F37B5FF30462FAA9 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F599A7610F589C3CB23E76A3 /* ContentView.swift */; };
+		DADE7EE698C0C6DC1D220D5C /* Habitat.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0291F9D696F70A11A8B599F /* Habitat.swift */; };
 		DDC1F3AFBF2C828BC0461EB9 /* Brand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BBAF7AABD54576A80B8ADE6 /* Brand.swift */; };
 		E10BFEC8161B9069A0E9383E /* Flights.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71DE2CC2E1BD3B1D9DAC83C6 /* Flights.swift */; };
 		ECF306A77002D85585C8C432 /* Agent.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB7F71EAE49E670F5B92A8C6 /* Agent.swift */; };
@@ -21,10 +23,12 @@
 		01C69E04C90EC1CDF152C599 /* Demo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Demo.swift; sourceTree = "<group>"; };
 		198987A59C6CE2338AE657B6 /* A2UICustomCatalogApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = A2UICustomCatalogApp.swift; sourceTree = "<group>"; };
 		1BBAF7AABD54576A80B8ADE6 /* Brand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Brand.swift; sourceTree = "<group>"; };
+		4D006C38D441CFE51CAABA28 /* Dashboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Dashboard.swift; sourceTree = "<group>"; };
 		71DE2CC2E1BD3B1D9DAC83C6 /* Flights.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Flights.swift; sourceTree = "<group>"; };
 		742BAD65D289AA2884EA2730 /* a2ui-bindjs */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "a2ui-bindjs"; path = ../../..; sourceTree = SOURCE_ROOT; };
 		A29F58E6D0C04CEE61774BBF /* Checks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Checks.swift; sourceTree = "<group>"; };
 		C679A775245D8DA655A431CA /* A2UICustomCatalog.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = A2UICustomCatalog.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D0291F9D696F70A11A8B599F /* Habitat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Habitat.swift; sourceTree = "<group>"; };
 		F599A7610F589C3CB23E76A3 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		FB7F71EAE49E670F5B92A8C6 /* Agent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Agent.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -82,8 +86,10 @@
 				1BBAF7AABD54576A80B8ADE6 /* Brand.swift */,
 				A29F58E6D0C04CEE61774BBF /* Checks.swift */,
 				F599A7610F589C3CB23E76A3 /* ContentView.swift */,
+				4D006C38D441CFE51CAABA28 /* Dashboard.swift */,
 				01C69E04C90EC1CDF152C599 /* Demo.swift */,
 				71DE2CC2E1BD3B1D9DAC83C6 /* Flights.swift */,
+				D0291F9D696F70A11A8B599F /* Habitat.swift */,
 			);
 			path = A2UICustomCatalog;
 			sourceTree = "<group>";
@@ -151,8 +157,10 @@
 				DDC1F3AFBF2C828BC0461EB9 /* Brand.swift in Sources */,
 				4CE05F85C1EA0E93563EF849 /* Checks.swift in Sources */,
 				B42F68C8F37B5FF30462FAA9 /* ContentView.swift in Sources */,
+				2A6793CC2D4C1FFB57ED1D0A /* Dashboard.swift in Sources */,
 				47C34C0BD898C0966BFBD1CE /* Demo.swift in Sources */,
 				E10BFEC8161B9069A0E9383E /* Flights.swift in Sources */,
+				DADE7EE698C0C6DC1D220D5C /* Habitat.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

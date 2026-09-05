@@ -184,31 +184,105 @@ describe('RenderSession memoisation', () => {
         expect(texts(second.ast)).toContain('after')
     })
 
-    // Modal and Tabs hold their own state, so a cached subtree would freeze them in
-    // whatever state they were last built with.
-    it('never memoises a stateful component, and rebuilds its ancestors', () => {
-        store.apply({
-            createSurface: {
-                surfaceId: 's',
-                components: [
-                    { id: 'root', component: 'Column', children: ['modal', 'label'] },
-                    { id: 'modal', component: 'Modal', trigger: 'trg', content: 'body' },
-                    { id: 'trg', component: 'Text', text: 'Open me' },
-                    { id: 'body', component: 'Text', text: 'Inside' },
-                    { id: 'label', component: 'Text', text: { path: '/name' } },
-                ],
-                dataModel: { name: 'Before' },
-            },
+    // A component holding a BindJS hook — `Modal`'s open state here — redraws with
+    // nothing in the data model moving, so the data model can never tell the cache it has
+    // gone stale. The runtime can: every hook setter calls `needsRerender` and nothing
+    // else does, so the engine watches it. Nothing declares itself stateful, and it does
+    // not matter which component the hook was in or who called it.
+    describe('renderer state', () => {
+        function drawModal() {
+            store.apply({
+                createSurface: {
+                    surfaceId: 's',
+                    components: [
+                        { id: 'root', component: 'Column', children: ['modal', 'label'] },
+                        { id: 'modal', component: 'Modal', trigger: 'trg', content: 'body' },
+                        { id: 'trg', component: 'Text', text: 'Open me' },
+                        { id: 'body', component: 'Text', text: 'Inside' },
+                        { id: 'label', component: 'Text', text: { path: '/name' } },
+                    ],
+                    dataModel: { name: 'Before' },
+                },
+            })
+        }
+
+        it('memoises a component holding a hook while its state is untouched', () => {
+            drawModal()
+
+            draw()
+            store.apply({ updateDataModel: { surfaceId: 's', path: '/unrelated', value: 1 } })
+
+            // The old contract was that such a component is *never* cached. It is now,
+            // right up until its state moves — which is strictly more reuse, not less.
+            expect(draw().reused).toBeGreaterThan(0)
         })
 
-        draw()
-        store.apply({ updateDataModel: { surfaceId: 's', path: '/unrelated', value: 1 } })
+        it('drops every cached subtree when a hook setter fires', () => {
+            drawModal()
 
-        const second = draw()
+            draw()
+            expect(draw().reused).toBeGreaterThan(0)
 
-        // root and modal rebuild; the Modal's own trigger is reused beneath it.
-        expect(second.nodeCount).toBeGreaterThanOrEqual(2)
-        expect(second.reused).toBeGreaterThan(0)
+            // What `useState`'s setter does, and the only thing it does that reaches us.
+            runtime.needsRerender('renderer')
+
+            const after = draw()
+
+            expect(after.reused).toBe(0)
+            expect(after.nodeCount).toBeGreaterThan(0)
+            expect(texts(after.ast)).toContain('Open me')
+        })
+
+        it('keeps watching after a host assigns its own needsRerender', () => {
+            drawModal()
+            draw()
+
+            // bindjs-react and both native hosts assign this to schedule their repaint,
+            // and may do it after the first render. Wrapping once at registration would
+            // lose the signal here and the cache would go quietly stale.
+            let repaints = 0
+            runtime.needsRerender = () => {
+                repaints += 1
+            }
+
+            expect(draw().reused).toBeGreaterThan(0)
+
+            runtime.needsRerender('renderer')
+
+            expect(draw().reused).toBe(0)
+            expect(repaints).toBe(1)
+        })
+
+        it('memoises nothing when the runtime offers no hooks to watch', () => {
+            drawModal()
+
+            const unwatchable = { ...(runtime as unknown as Record<string, unknown>) } as Record<string, unknown>
+            const bound = runtime as unknown as Record<string, unknown>
+
+            // A minimal runtime, of the kind `BindJSRuntimeLike` allows. There is no way
+            // to know a hook fired, so a cached subtree could keep drawing a state that
+            // has moved on — the engine gives up reuse rather than risk it.
+            const minimal = {
+                callComponent: (...args: never[]) => (bound.callComponent as Function).apply(runtime, args),
+                unwrapComponentAST: (...args: never[]) => (bound.unwrapComponentAST as Function).apply(runtime, args),
+                makeComponent: (...args: never[]) => (bound.makeComponent as Function).apply(runtime, args),
+                context: unwatchable.context,
+            } as unknown as BindJSRuntimeLike
+
+            const withoutHooks = new RenderSession()
+            const render = () =>
+                withoutHooks.render({
+                    runtime: minimal,
+                    surface: store.requireSurface('s'),
+                    catalog: BASIC_CATALOG,
+                    registry,
+                    locale: 'en-US',
+                })
+
+            render()
+
+            expect(render().reused).toBe(0)
+        })
     })
 
     // A cached subtree handed to a named prop must still look like a component: BindJS

@@ -53,6 +53,12 @@ const RUNTIME_STUB = `
             ForEach: (data) => ({ type: 'ForEach', props: { count: data.length } }),
             Empty: () => ({ type: 'Empty', props: {} }),
         },
+
+        // What every BindJS hook setter calls, and what the engine wraps to notice that a
+        // component redraws with nothing in the data model having moved. A runtime
+        // without it is memoised not at all, so a stub standing in for a real one needs it
+        // or this file would be testing the wrong thing.
+        needsRerender: () => {},
     }
 `
 

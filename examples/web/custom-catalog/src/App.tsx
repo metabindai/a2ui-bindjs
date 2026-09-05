@@ -1,17 +1,29 @@
 /**
- * Overriding how A2UI components look.
+ * Components of the app's own, in an agent's surface.
  *
- * The same surface is rendered twice — once with the built-in catalog, once with two
- * components swapped out. Nothing about the A2UI messages changes between them: the
- * agent describes *what* to show, the catalog decides *how* it looks.
+ * Two of them replace what the basic catalog already has, and two it does not have at
+ * all. Nothing about the A2UI messages changes between the screens: the agent describes
+ * *what* to show, the catalog decides *how* it looks.
  *
  * A catalog is a map from A2UI component type to the name of a registered BindJS
  * component, so overriding one means supplying the component and changing one entry.
  * There is no runtime to build here: `sources` and `catalog` are enough, and the renderer
  * registers them on the runtime it already owns.
  */
-import { BASIC_CATALOG, type AgentMessage, type Catalog } from '@metabindai/a2ui-bindjs'
+import { useState } from 'react'
+import {
+    BASIC_CATALOG,
+    type ActionMessage,
+    type AgentMessage,
+    type Catalog,
+    type Diagnostic,
+    type JsonValue,
+    type SurfaceStore,
+} from '@metabindai/a2ui-bindjs'
 import { A2UIRenderer, useA2UIStore } from '@metabindai/a2ui-bindjs-react'
+import { DASHBOARD_CATALOG, DASHBOARD_MESSAGES, DASHBOARD_SOURCES } from './dashboard'
+import { FLIGHT_CATALOG, FLIGHT_MESSAGES, FLIGHT_SOURCES } from './flights'
+import { HABITAT_CATALOG, HABITAT_MESSAGES, HABITAT_SOURCES } from './habitat'
 
 // ─── The agent's messages ────────────────────────────────────────────────────
 
@@ -168,35 +180,252 @@ const BRAND_CATALOG: Catalog = {
 }
 
 // ─── App ─────────────────────────────────────────────────────────────────────
+//
+// An index in two sections and a screen behind each row, the same shape as the iOS and
+// Android examples. Nothing here describes an offer card, a star, a flight, a chart or a
+// deck of cards; that arrives as A2UI and a catalog draws it.
+
+const SCREENS = {
+    offer: 'Offer card',
+    overrides: 'Overrides',
+    rating: 'Rating',
+    flights: 'Flight search',
+    dashboard: 'Sales dashboard',
+    habitat: 'Habitat sort',
+} as const
+
+type Screen = keyof typeof SCREENS
+
+interface LoggedAction {
+    id: number
+    screen: Screen
+    name: string
+    payload: Array<[string, string]>
+    at: string
+}
+
+/**
+ * Every surface the example shows, in one stream.
+ *
+ * A module constant, not an array built in the component: `useA2UIStore` applies what it
+ * is handed when the identity changes, so a fresh literal each render would re-apply the
+ * stream, re-render, and build another literal.
+ */
+const ALL_MESSAGES: AgentMessage[] = [...MESSAGES, ...FLIGHT_MESSAGES, ...DASHBOARD_MESSAGES, ...HABITAT_MESSAGES]
+
+let nextActionId = 0
+
+/** Sorted by key, because an object has no order a reader can rely on. */
+function pairs(context: Record<string, JsonValue> | undefined): Array<[string, string]> {
+    return Object.entries(context ?? {})
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([key, value]) => [key, typeof value === 'string' ? value : JSON.stringify(value)])
+}
 
 export function App() {
-    // One store, read by both renderers — the surface is described once and drawn twice.
-    const { store } = useA2UIStore(MESSAGES)
+    // One store for every surface. The screens differ in which catalog draws them, not in
+    // what the agent said.
+    const { store } = useA2UIStore(ALL_MESSAGES)
+
+    const [screen, setScreen] = useState<Screen | null>(null)
+    const [actions, setActions] = useState<LoggedAction[]>([])
+    // Keyed by screen *and* slot: the Rating screen draws two renderers, and one of them
+    // is meant to fail. Sharing a slot would let whichever reported last erase the other.
+    const [diagnostics, setDiagnostics] = useState<Record<string, string[]>>({})
+    const [showingActivity, setShowingActivity] = useState(false)
+
+    if (screen === null) {
+        return <Index onOpen={setScreen} />
+    }
+
+    // Only the visible screen can dispatch or fail, so tagging with it is enough to keep
+    // one screen from reporting another's work.
+    const record = (message: ActionMessage) => {
+        setActions((current) =>
+            [{ id: nextActionId++, screen, name: message.name, payload: pairs(message.context), at: new Date().toLocaleTimeString() }, ...current].slice(0, 12)
+        )
+    }
+
+    const report = (slot: string) => (found: Diagnostic[]) => {
+        setDiagnostics((current) => ({ ...current, [`${screen}:${slot}`]: found.map((entry) => entry.message) }))
+    }
+
+    const mine = actions.filter((entry) => entry.screen === screen)
+    const failures = Object.entries(diagnostics)
+        .filter(([key]) => key.startsWith(`${screen}:`))
+        .flatMap(([, messages]) => messages)
 
     return (
         <main className="app">
-            <h1>One surface, two catalogs</h1>
+            <header className="bar">
+                <button className="back" onClick={() => setScreen(null)}>
+                    ← Back
+                </button>
+                <h1>{SCREENS[screen]}</h1>
+            </header>
 
-            <div className="panels">
-                <section className="panel">
-                    <h2>Built-in catalog</h2>
-                    <A2UIRenderer store={store} locale="en-US" />
-                </section>
+            <Surfaces screen={screen} store={store} onAction={record} onDiagnostics={report} />
 
-                <section className="panel">
-                    <h2>Text and Button overridden</h2>
-                    <A2UIRenderer store={store} sources={BRAND_SOURCES} catalog={BRAND_CATALOG} locale="en-US" />
-                </section>
-            </div>
+            <ActivityPill actions={mine.length} diagnostics={failures.length} onOpen={() => setShowingActivity(true)} />
 
-            <h1>A component the basic catalog does not have</h1>
-
-            <div className="panels">
-                <section className="panel">
-                    <h2>Rating, registered by this app</h2>
-                    <A2UIRenderer store={store} surfaceId="review" sources={BRAND_SOURCES} catalog={BRAND_CATALOG} locale="en-US" />
-                </section>
-            </div>
+            {showingActivity && <ActivitySheet actions={mine} diagnostics={failures} onClose={() => setShowingActivity(false)} />}
         </main>
+    )
+}
+
+// ─── Index ───────────────────────────────────────────────────────────────────
+
+function Index({ onOpen }: { onOpen(screen: Screen): void }) {
+    return (
+        <main className="app">
+            <h1>A2UI Custom Catalog</h1>
+
+            {/* Types the bundled catalog already has: as it ships, and restyled. */}
+            <h2 className="section">Built-in catalog</h2>
+            <IndexRow screen="offer" onOpen={onOpen} />
+            <IndexRow screen="overrides" onOpen={onOpen} />
+
+            {/* Types it does not have at all. */}
+            <h2 className="section">Custom components</h2>
+            <IndexRow screen="rating" onOpen={onOpen} />
+            <IndexRow screen="flights" onOpen={onOpen} />
+            <IndexRow screen="dashboard" onOpen={onOpen} />
+            <IndexRow screen="habitat" onOpen={onOpen} />
+        </main>
+    )
+}
+
+function IndexRow({ screen, onOpen }: { screen: Screen; onOpen(screen: Screen): void }) {
+    return (
+        <button className="row" onClick={() => onOpen(screen)}>
+            {SCREENS[screen]}
+        </button>
+    )
+}
+
+// ─── Surfaces ────────────────────────────────────────────────────────────────
+
+interface SurfacesProps {
+    screen: Screen
+    store: SurfaceStore
+    onAction(message: ActionMessage): void
+    onDiagnostics(slot: string): (found: Diagnostic[]) => void
+}
+
+function Surfaces({ screen, store, onAction, onDiagnostics }: SurfacesProps) {
+    const shared = { store, locale: 'en-US', onAction, onDiagnostics: onDiagnostics('surface') }
+
+    if (screen === 'offer') {
+        return <A2UIRenderer {...shared} surfaceId="main" />
+    }
+
+    if (screen === 'overrides') {
+        return <A2UIRenderer {...shared} surfaceId="main" sources={BRAND_SOURCES} catalog={BRAND_CATALOG} />
+    }
+
+    if (screen === 'flights') {
+        return <A2UIRenderer {...shared} surfaceId="flights" sources={FLIGHT_SOURCES} catalog={FLIGHT_CATALOG} />
+    }
+
+    if (screen === 'dashboard') {
+        return <A2UIRenderer {...shared} surfaceId="dashboard" sources={DASHBOARD_SOURCES} catalog={DASHBOARD_CATALOG} />
+    }
+
+    if (screen === 'habitat') {
+        return <A2UIRenderer {...shared} surfaceId="habitat" sources={HABITAT_SOURCES} catalog={HABITAT_CATALOG} />
+    }
+
+    // The same surface on a renderer that was never told about `Rating`, so the two
+    // outcomes sit side by side. Why the second is empty is in the sheet.
+    return (
+        <>
+            <A2UIRenderer {...shared} surfaceId="review" sources={BRAND_SOURCES} catalog={BRAND_CATALOG} />
+
+            <section className="panel">
+                <h2>Without the catalog</h2>
+                <A2UIRenderer store={store} locale="en-US" surfaceId="review" onDiagnostics={onDiagnostics('without')} />
+            </section>
+        </>
+    )
+}
+
+// ─── What a surface says back ────────────────────────────────────────────────
+
+function ActivityPill({ actions, diagnostics, onOpen }: { actions: number; diagnostics: number; onOpen(): void }) {
+    if (actions === 0 && diagnostics === 0) {
+        return null
+    }
+
+    return (
+        <button className="pill" onClick={onOpen}>
+            {actions > 0 && <span>{counted(actions, 'Action')}</span>}
+            {actions > 0 && diagnostics > 0 && <span className="dot">·</span>}
+            {diagnostics > 0 && <span className="failed">{counted(diagnostics, 'Diagnostic')}</span>}
+            <ChevronUp />
+        </button>
+    )
+}
+
+/** Drawn, because the glyphs that look like a chevron are not one — `⌃` is the control key. */
+function ChevronUp() {
+    return (
+        <svg className="chevron" width="10" height="7" viewBox="0 0 10 7" aria-hidden="true">
+            <path d="M1 6L5 2l4 4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+    )
+}
+
+function counted(count: number, noun: string): string {
+    return `${count} ${noun}${count === 1 ? '' : 's'}`
+}
+
+interface SheetProps {
+    actions: LoggedAction[]
+    diagnostics: string[]
+    onClose(): void
+}
+
+function ActivitySheet({ actions, diagnostics, onClose }: SheetProps) {
+    return (
+        <div className="scrim" onClick={onClose}>
+            <div className="sheet" onClick={(event) => event.stopPropagation()}>
+                <header>
+                    <h2>Activity</h2>
+                    <button onClick={onClose}>Done</button>
+                </header>
+
+                {diagnostics.length > 0 && (
+                    <section>
+                        <h3>Diagnostics</h3>
+                        {diagnostics.map((message, index) => (
+                            <p className="failure" key={index}>
+                                {message}
+                            </p>
+                        ))}
+                    </section>
+                )}
+
+                {actions.length > 0 && (
+                    <section>
+                        <h3>Actions</h3>
+                        {actions.map((entry) => (
+                            <article key={entry.id}>
+                                <div className="name">
+                                    <strong>{entry.name}</strong>
+                                    <time>{entry.at}</time>
+                                </div>
+
+                                {entry.payload.map(([key, value]) => (
+                                    <div className="pair" key={key}>
+                                        <span>{key}</span>
+                                        <code>{value}</code>
+                                    </div>
+                                ))}
+                            </article>
+                        ))}
+                    </section>
+                )}
+            </div>
+        </div>
     )
 }

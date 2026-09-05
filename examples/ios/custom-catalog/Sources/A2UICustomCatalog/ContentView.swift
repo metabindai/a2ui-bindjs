@@ -1,7 +1,8 @@
 // The app's own SwiftUI — all of it.
 //
 // An index in two sections and a screen behind each row. Nothing here describes an offer
-// card, a star or a flight; that arrives as A2UI and a catalog draws it.
+// card, a star, a flight, a chart or a deck of cards; that arrives as A2UI and a catalog
+// draws it.
 
 import SwiftUI
 import A2UI
@@ -12,14 +13,20 @@ struct ContentView: View {
     var body: some View {
         NavigationStack {
             List {
+                // Split by what the agent named, not by what the app supplied: these two
+                // are types the bundled catalog already has, drawn as it ships and again
+                // with `Text` and `Button` replaced.
                 Section("Built-in catalog") {
                     NavigationLink("Offer card", value: Screen.offer)
+                    NavigationLink("Overrides", value: Screen.overrides)
                 }
 
+                // Types the bundled catalog does not have at all.
                 Section("Custom components") {
-                    NavigationLink("Overrides", value: Screen.overrides)
                     NavigationLink("Rating", value: Screen.rating)
                     NavigationLink("Flight search", value: Screen.flights)
+                    NavigationLink("Sales dashboard", value: Screen.dashboard)
+                    NavigationLink("Habitat sort", value: Screen.habitat)
                 }
             }
             .navigationTitle("A2UI Custom Catalog")
@@ -37,6 +44,8 @@ private enum Screen: String, Hashable {
     case overrides = "Overrides"
     case rating = "Rating"
     case flights = "Flight search"
+    case dashboard = "Sales dashboard"
+    case habitat = "Habitat sort"
 }
 
 // MARK: - Screens
@@ -61,6 +70,12 @@ private struct ScreenView: View {
 
         case .flights:
             return [Drawn(host: demo.flights, surfaceId: "flights")]
+
+        case .dashboard:
+            return [Drawn(host: demo.dashboard, surfaceId: "dashboard")]
+
+        case .habitat:
+            return [Drawn(host: demo.habitat, surfaceId: "habitat")]
         }
     }
 

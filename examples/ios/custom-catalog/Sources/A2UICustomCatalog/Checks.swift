@@ -90,6 +90,31 @@ func runChecks() -> Bool {
     let flightsView = flights.context.view(id: "flights") { _ in flights.ast(for: "flights") }
     report("12. native decode", flightsView != nil, "ok")
 
+    // The dashboard: one A2UI type, three chart shapes, over three lists.
+    let dashboard = A2UIHost(locale: "en-US")
+    dashboard.useCatalog(sources: Dashboard.sources, catalog: Dashboard.catalog)
+    dashboard.apply(Dashboard.messages)
+
+    let charts = render(dashboard, "dashboard")
+    let shapes = charts.contains("BarMark") && charts.contains("LineMark") && charts.contains("PieSliceMark")
+
+    report("13. dashboard", dashboard.diagnostics.isEmpty, "no diagnostics")
+    report("14. three shapes", shapes, "bar, line and pie marks from one type")
+    // `formatCurrency` is the engine's, applied before the surface is built; the chart
+    // formats its own readout separately.
+    report("15. engine formatting", charts.contains("708,550"), "the total came through formatCurrency")
+
+    // The board: a type whose whole point is state the data model does not hold.
+    let habitat = A2UIHost(locale: "en-US")
+    habitat.useCatalog(sources: Habitat.sources, catalog: Habitat.catalog)
+    habitat.apply(Habitat.messages)
+
+    let board = render(habitat, "habitat")
+    let bins = ["Ocean", "Savanna", "Arctic"].allSatisfy { board.contains($0) }
+
+    report("16. habitat", habitat.diagnostics.isEmpty && bins, "three bins drawn")
+    report("17. deck dealt", board.contains("1 of 9"), "nine cards, one face-up")
+
     print(failures == 0 ? "all checks ok" : "\(failures) check(s) failed")
 
     return failures == 0
