@@ -142,9 +142,14 @@ pnpm dev:metabind           # :5184
 pnpm dev:mcp                # :5185 + MCP server on :8787
 pnpm dev:playground         # :5181  (also `pnpm dev`)
 
-pnpm dev:ios                # sync the JS and run the Swift example on an iOS simulator
-pnpm dev:ios:mac            # the same sources as a macOS window
-pnpm dev:android            # sync the JS and install the Compose example on a device
+pnpm dev:ios                # the minimal example on an iOS simulator
+pnpm dev:ios:catalog        # every catalog component, on a simulator
+pnpm dev:ios:custom-catalog # a component the app registers and the agent names
+pnpm dev:ios:mac            # the minimal example as a macOS window
+
+pnpm dev:android            # the same three on a device or emulator
+pnpm dev:android:catalog
+pnpm dev:android:custom-catalog
 ```
 
 ## Rendering a surface

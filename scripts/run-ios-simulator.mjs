@@ -1,24 +1,62 @@
-// Builds the minimal example for an iOS simulator, installs it and launches it.
+// Builds one of the iOS examples for a simulator, installs it and launches it.
+//
+//     node scripts/run-ios-simulator.mjs [minimal|catalog|custom-catalog]
 //
 // `swift run` builds the same sources as a macOS window, which is quicker but draws with
 // AppKit-backed SwiftUI: `Button` picks up platform chrome and there is no touch input.
-// This runs the iOS the example is written for, so it is what `pnpm dev:ios` does.
+// This runs the iOS the examples are written for, so it is what `pnpm dev:ios` does.
 //
 // Devices are addressed by UDID rather than name. `-destination name=...` implies
 // `OS:latest`, so a simulator on any older runtime simply is not found — and names repeat
 // across runtimes, which makes the failure look like the device is missing.
 
 import { execFileSync } from 'node:child_process'
-import { existsSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 
-// MARK: - Constants
+// MARK: - The example
 
-const PROJECT = 'examples/ios/minimal/A2UIMinimal.xcodeproj'
-const SCHEME = 'A2UIMinimal'
-const BUNDLE_ID = 'ai.metabind.a2ui.minimal'
-
+const EXAMPLES_DIR = 'examples/ios'
 const DERIVED_DATA = '.build/ios-simulator'
-const APP = `${DERIVED_DATA}/Build/Products/Debug-iphonesimulator/${SCHEME}.app`
+
+/**
+ * Everything about an example is derived from its own directory rather than listed here,
+ * so adding one to `examples/ios/` is enough to make it runnable: the scheme is the name
+ * of its generated project, and the bundle id comes from the `project.yml` that generated
+ * it. A table here would be a second place to keep them in step.
+ */
+function readExample(name) {
+    const directory = `${EXAMPLES_DIR}/${name}`
+
+    if (!existsSync(directory)) {
+        const available = readdirSync(EXAMPLES_DIR, { withFileTypes: true })
+            .filter((entry) => entry.isDirectory())
+            .map((entry) => entry.name)
+
+        throw new Error(`No example "${name}" in ${EXAMPLES_DIR}/. Available: ${available.join(', ')}`)
+    }
+
+    const project = readdirSync(directory).find((entry) => entry.endsWith('.xcodeproj'))
+
+    if (!project) {
+        throw new Error(`${directory} has no .xcodeproj. Generate it with \`xcodegen\`.`)
+    }
+
+    const scheme = project.replace('.xcodeproj', '')
+    const bundleId = readFileSync(`${directory}/project.yml`, 'utf8').match(/PRODUCT_BUNDLE_IDENTIFIER: *(\S+)/)?.[1]
+
+    if (!bundleId) {
+        throw new Error(`${directory}/project.yml declares no PRODUCT_BUNDLE_IDENTIFIER.`)
+    }
+
+    return {
+        project: `${directory}/${project}`,
+        scheme,
+        bundleId,
+        app: `${DERIVED_DATA}/Build/Products/Debug-iphonesimulator/${scheme}.app`,
+    }
+}
+
+const example = readExample(process.argv[2] ?? 'minimal')
 
 // MARK: - Helpers
 
@@ -82,14 +120,14 @@ function chooseDevice() {
 const device = chooseDevice()
 
 console.log(`==> Simulator: ${device.name} (${device.runtime})`)
-console.log(`==> Building ${SCHEME}`)
+console.log(`==> Building ${example.scheme}`)
 
 run(
     'xcodebuild',
     [
         'build',
-        '-project', PROJECT,
-        '-scheme', SCHEME,
+        '-project', example.project,
+        '-scheme', example.scheme,
         '-configuration', 'Debug',
         '-destination', `id=${device.udid}`,
         '-derivedDataPath', DERIVED_DATA,
@@ -98,8 +136,8 @@ run(
     { stdio: 'inherit' }
 )
 
-if (!existsSync(APP)) {
-    throw new Error(`xcodebuild succeeded but ${APP} is missing.`)
+if (!existsSync(example.app)) {
+    throw new Error(`xcodebuild succeeded but ${example.app} is missing.`)
 }
 
 // `boot` exits non-zero when the device is already booted, which is the common case.
@@ -111,7 +149,7 @@ run('xcrun', ['simctl', 'bootstatus', device.udid, '-b'])
 run('open', ['-a', 'Simulator'])
 
 console.log('==> Installing')
-run('xcrun', ['simctl', 'install', device.udid, APP])
+run('xcrun', ['simctl', 'install', device.udid, example.app])
 
-console.log(`==> Launching ${BUNDLE_ID}`)
-run('xcrun', ['simctl', 'launch', device.udid, BUNDLE_ID], { stdio: 'inherit' })
+console.log(`==> Launching ${example.bundleId}`)
+run('xcrun', ['simctl', 'launch', device.udid, example.bundleId], { stdio: 'inherit' })
