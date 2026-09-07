@@ -147,7 +147,7 @@ pnpm dev:ios:catalog        # every catalog component, on a simulator
 pnpm dev:ios:custom-catalog # a component the app registers and the agent names
 pnpm dev:ios:mac            # the minimal example as a macOS window
 
-pnpm dev:android            # the same three on a device or emulator
+pnpm dev:android            # the same three, starting an emulator if none is running
 pnpm dev:android:catalog
 pnpm dev:android:custom-catalog
 ```
