@@ -1,0 +1,6 @@
+# A2UI on BindJS. The top level splits by platform; `spec/` is the protocol itself.
+# Examples are grouped the same way — only the web ones are npm packages.
+packages:
+  - 'core'
+  - 'react'
+  - 'examples/web/*'

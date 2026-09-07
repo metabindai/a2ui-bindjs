@@ -1,0 +1,35 @@
+// swift-tools-version: 5.9
+import PackageDescription
+
+// SwiftPM resolves a package by the manifest at the repository root, so this is what makes
+// the Apple library consumable:
+//
+//     .package(url: "https://github.com/metabindai/a2ui-bindjs.git", from: "0.1.0")
+//
+// The sources live under `ios/`, and the JavaScript renderer travels with them as a
+// resource. `bindjs-apple` 1.2.0 is the first release with the two `BindJSContext` members
+// the library stands on: `javaScriptContext` and `view(id:buildingAST:)`.
+let package = Package(
+    name: "a2ui-bindjs",
+    platforms: [.macOS(.v14), .iOS(.v17)],
+    products: [
+        .library(name: "A2UI", targets: ["A2UI"])
+    ],
+    dependencies: [
+        .package(url: "https://github.com/metabindai/bindjs-apple.git", from: "1.2.0")
+    ],
+    targets: [
+        .target(
+            name: "A2UI",
+            dependencies: [
+                .product(name: "BindJS", package: "bindjs-apple")
+            ],
+            path: "ios/packages/a2ui-bindjs-apple/Sources/A2UI",
+            resources: [
+                // Built by `pnpm sync:native`, and committed so this package works without
+                // a JavaScript toolchain.
+                .copy("Resources/a2ui-native.js")
+            ]
+        )
+    ]
+)

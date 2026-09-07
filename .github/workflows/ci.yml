@@ -1,0 +1,228 @@
+name: CI
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+
+# A new push to the same branch makes the previous run irrelevant.
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    web:
+        name: build and test
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v4
+
+            # Before setup-node, so its pnpm cache has something to key on.
+            - uses: pnpm/action-setup@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: pnpm
+
+            - run: pnpm install --frozen-lockfile
+
+            - name: Check formatting
+              run: pnpm format:check
+
+            - name: Build
+              run: pnpm build
+
+            # Includes the official A2UI conformance suite and the 43 spec examples.
+            - name: Test
+              run: pnpm test
+
+            # Skips cleanly when the Metabind CLI is not installed, which it is not here.
+            - name: Validate the catalog
+              run: pnpm validate:catalog
+
+            # What `workspace:*` hides: a missing `files` entry, a wrong `exports` path, a
+            # dependency left in the wrong section, or a workspace range that never got
+            # rewritten. Packed with pnpm rather than npm, because only pnpm rewrites
+            # `workspace:^` into a real semver range — and because `prepack` has to run or
+            # the tarball is just a package.json.
+            - name: The published packages install and work
+              run: |
+                  set -euo pipefail
+                  rm -rf /tmp/pkg && mkdir -p /tmp/pkg
+                  (cd core && pnpm pack --pack-destination /tmp/pkg)
+                  (cd react && pnpm pack --pack-destination /tmp/pkg)
+
+                  node -e "
+                    const { readFileSync } = require('node:fs')
+                    const { execSync } = require('node:child_process')
+                    const manifest = execSync('tar -xzO -f /tmp/pkg/metabindai-a2ui-bindjs-react-0.1.0.tgz package/package.json')
+                    const dependency = JSON.parse(manifest).dependencies['@metabindai/a2ui-bindjs']
+                    if (dependency.startsWith('workspace:')) {
+                      throw new Error('react still depends on core by workspace range: ' + dependency)
+                    }
+                    console.log('react → core resolves to', dependency)
+                  "
+
+                  rm -rf /tmp/consumer && mkdir -p /tmp/consumer && cd /tmp/consumer
+                  npm init -y > /dev/null
+                  npm i --silent /tmp/pkg/metabindai-a2ui-bindjs-0.1.0.tgz @metabindai/bindjs-runtime
+
+                  node --input-type=module -e "
+                    import { SurfaceStore, validateMessages, BASIC_CATALOG_SOURCES } from '@metabindai/a2ui-bindjs'
+
+                    const store = new SurfaceStore()
+                    store.apply({ createSurface: { surfaceId: 's', components: [{ id: 'root', component: 'Text', text: 'hi' }], dataModel: {} } })
+
+                    const issues = validateMessages([{ createSurface: { surfaceId: 's', components: [{ id: 'root', component: 'Card', child: 'gone' }], dataModel: {} } }])
+
+                    if (store.surfaceIds.length !== 1) throw new Error('the store did not apply a surface')
+                    if (Object.keys(BASIC_CATALOG_SOURCES).length !== 18) throw new Error('the catalog did not ship')
+                    if (issues[0]?.code !== 'DANGLING_REFERENCE') throw new Error('validation did not ship')
+                  "
+
+                  node -e "
+                    const { readFileSync } = require('node:fs')
+                    const bundle = require.resolve('@metabindai/a2ui-bindjs').replace(/dist.index[.]js\$/, 'dist-bundle/a2ui-native.js')
+                    const source = readFileSync(bundle, 'utf8')
+                    if (/\brequire\s*\(/.test(source) || /\bprocess[.]/.test(source)) {
+                      throw new Error('the native bundle is not self-contained')
+                    }
+                    console.log('native bundle ok:', source.length, 'bytes')
+                  "
+
+
+    native:
+        name: swift
+        runs-on: macos-latest
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: pnpm/action-setup@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: pnpm
+
+            - run: pnpm install --frozen-lockfile
+
+            # The renderer bundle and the catalog example's copy of the spec examples are
+            # generated but committed, so an example runs without a JavaScript toolchain.
+            # That only holds if the committed copies are current.
+            - name: The committed renderer bundle and spec examples are up to date
+              run: |
+                  pnpm sync:native
+                  git diff --exit-code -- ios/packages/a2ui-bindjs-apple/Sources/A2UI/Resources/a2ui-native.js examples/ios/catalog/Sources/A2UICatalog/SpecExamples.generated.swift
+
+            # The root manifest is what a SwiftPM consumer resolves by URL.
+            - name: Build the Apple library
+              run: swift build
+
+            - name: Build the example
+              run: swift build --package-path examples/ios/minimal
+
+            # Exercises the JavaScript bridge on JavaScriptCore: messages in, AST out,
+            # a tap resolved through the host's runtime, and the redraw signal.
+            - name: Run the headless checks
+              timeout-minutes: 5
+              run: swift run --package-path examples/ios/minimal A2UIMinimal --check
+
+            # Every basic-catalog component as an A2UI surface, decoded natively with no
+            # diagnostics — a catalog source that breaks on JavaScriptCore fails here.
+            - name: Build the catalog example
+              run: swift build --package-path examples/ios/catalog
+
+            - name: Run the catalog surfaces headlessly
+              timeout-minutes: 5
+              run: swift run --package-path examples/ios/catalog A2UICatalog --check
+
+            # A component registered by the app, named by the agent: proves `useCatalog`
+            # on the host and that the same BindJS source the web example uses draws here.
+            - name: Build the custom-catalog example
+              run: swift build --package-path examples/ios/custom-catalog
+
+            - name: Run the custom-catalog checks
+              timeout-minutes: 5
+              run: swift run --package-path examples/ios/custom-catalog A2UICustomCatalog --check
+    android:
+        name: android
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: pnpm/action-setup@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: pnpm
+
+            - uses: actions/setup-java@v4
+              with:
+                  distribution: temurin
+                  java-version: 21
+
+            - uses: android-actions/setup-android@v3
+
+            - run: pnpm install --frozen-lockfile
+
+            # Same rule as the Apple bundle: generated but committed, so the library
+            # builds without a JavaScript toolchain. That only holds if it is current.
+            - name: The committed renderer bundle is up to date
+              run: |
+                  pnpm sync:native:android
+                  git diff --exit-code -- android/packages/a2ui-bindjs-android/src/main/res/raw/a2ui_native.js
+
+            # bindjs-android lives in GitHub Packages, which needs a token even to read.
+            # The instrumented test APKs are built too, so a test that no longer compiles
+            # fails here even though nothing can run it on the hosted runner.
+            - name: Build the library and the examples
+              working-directory: android
+              env:
+                  GITHUB_ACTOR: ${{ github.actor }}
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: >
+                  ./gradlew :a2ui:assembleDebug
+                  :minimal:assembleDebug
+                  :catalog:assembleDebug :catalog:assembleDebugAndroidTest
+                  :custom-catalog:assembleDebug :custom-catalog:assembleDebugAndroidTest
+
+            # DISABLED: the emulator never finishes booting on the hosted runner
+            # ("Timeout waiting for emulator to boot"), so this step failed every run
+            # while everything above it passed. Re-enable once a working image/runner
+            # combination is found — KVM is available, so the fault is the boot itself
+            # rather than acceleration being missing.
+            #
+            # What this costs: nothing verifies the bridge in CI. `JavaScriptSandbox` is
+            # served by the system WebView, so there is no Robolectric shadow of it that
+            # would mean anything, and the two instrumented suites are the only things
+            # that exercise the crossing — a tap resolving against the host's runtime, the
+            # redraw signal, `Intl`, and the 43 spec examples decoding into real trees. The
+            # steps above only prove it all compiles. Until this is back, run it by hand
+            # against a device or emulator before touching the bridge:
+            #
+            #     pnpm check:android
+            #
+            # - name: Enable KVM
+            #   run: |
+            #       echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            #         | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+            #       sudo udevadm control --reload-rules
+            #       sudo udevadm trigger --name-match=kvm
+            #
+            # - name: Run the bridge checks on an emulator
+            #   uses: reactivecircus/android-emulator-runner@v2
+            #   timeout-minutes: 30
+            #   env:
+            #       GITHUB_ACTOR: ${{ github.actor }}
+            #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            #   with:
+            #       api-level: 35
+            #       target: google_apis
+            #       arch: x86_64
+            #       working-directory: android
+            #       script: ./gradlew :a2ui:connectedDebugAndroidTest

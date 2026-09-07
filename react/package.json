@@ -1,0 +1,73 @@
+{
+    "name": "@metabindai/a2ui-bindjs-react",
+    "version": "0.1.0",
+    "description": "React renderer for A2UI surfaces, built on the BindJS web renderer.",
+    "license": "Apache-2.0",
+    "author": "Yap Studios",
+    "keywords": [
+        "a2ui",
+        "bindjs",
+        "metabind",
+        "server-driven-ui",
+        "react",
+        "renderer"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/metabindai/a2ui-bindjs.git",
+        "directory": "react"
+    },
+    "homepage": "https://github.com/metabindai/a2ui-bindjs#readme",
+    "bugs": {
+        "url": "https://github.com/metabindai/a2ui-bindjs/issues"
+    },
+    "type": "module",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "default": "./dist/index.js"
+        }
+    },
+    "sideEffects": false,
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "dev": "tsc --watch",
+        "prepack": "pnpm run build",
+        "build": "rm -rf dist && tsc -b",
+        "test": "vitest run",
+        "test:watch": "vitest"
+    },
+    "dependencies": {
+        "@metabindai/a2ui-bindjs": "workspace:^"
+    },
+    "peerDependencies": {
+        "@metabindai/bindjs-react": "^1.0.5",
+        "@metabindai/bindjs-runtime": "^1.0.9",
+        "react": "^18.3.1",
+        "react-dom": "^18.3.1",
+        "styled-components": "^6.1.14"
+    },
+    "devDependencies": {
+        "@metabindai/bindjs-react": "^1.0.5",
+        "@metabindai/bindjs-runtime": "^1.0.9",
+        "@testing-library/dom": "^10.4.1",
+        "@testing-library/react": "^16.3.2",
+        "@types/node": "^22.10.5",
+        "@types/react": "^18.3.18",
+        "jsdom": "^30.0.1",
+        "react": "^18.3.1",
+        "react-dom": "^18.3.1",
+        "styled-components": "^6.5.3",
+        "typescript": "~5.6.2",
+        "vitest": "^3.1.1"
+    },
+    "publishConfig": {
+        "access": "restricted"
+    }
+}

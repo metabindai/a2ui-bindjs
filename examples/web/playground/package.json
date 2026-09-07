@@ -1,0 +1,36 @@
+{
+    "name": "@metabindai/a2ui-bindjs-playground",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "description": "Live playground for the A2UI renderer: message stream editor + parsed events + surface state",
+    "scripts": {
+        "dev": "vite",
+        "build": "tsc -b && vite build",
+        "preview": "vite preview",
+        "test": "vitest run"
+    },
+    "dependencies": {
+        "@metabindai/a2ui-bindjs": "workspace:*",
+        "@metabindai/a2ui-bindjs-react": "workspace:*",
+        "@metabindai/bindjs-react": "^1.0.5",
+        "@metabindai/bindjs-runtime": "^1.0.9",
+        "@monaco-editor/react": "^4.7.0",
+        "monaco-editor": "^0.52.2",
+        "react": "^18.3.1",
+        "react-dom": "^18.3.1",
+        "react-resizable-panels": "^2.1.7",
+        "styled-components": "^6.1.14"
+    },
+    "devDependencies": {
+        "@testing-library/dom": "^10.4.1",
+        "@testing-library/react": "^16.3.2",
+        "@types/react": "^18.3.18",
+        "@types/react-dom": "^18.3.5",
+        "@vitejs/plugin-react": "^4.3.4",
+        "jsdom": "^30.0.1",
+        "typescript": "~5.6.2",
+        "vite": "^6.0.5",
+        "vitest": "^3.2.7"
+    }
+}

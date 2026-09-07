@@ -1,0 +1,27 @@
+node_modules
+dist
+dist-runtime
+*.tsbuildinfo
+.DS_Store
+.turbo
+*.log
+.npmrc
+.claude/
+sources.generated.ts
+dist-bundle
+
+# Secrets — never commit. `.env.example` is the template that is safe to share.
+.env
+.env.local
+.env.*.local
+
+# Swift build output, and the JS copied in by `sync:native`
+.build
+.swiftpm
+xcuserdata/
+*.xcuserdatad
+
+# Committed on purpose, so an example opens and runs on its own:
+#   - the renderer bundle under ios/packages/*/Sources/A2UI/Resources
+#     (regenerate with `pnpm sync:native`)
+#   - each iOS example's Package.resolved, which pins its Swift dependencies
