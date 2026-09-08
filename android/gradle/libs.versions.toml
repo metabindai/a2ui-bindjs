@@ -11,7 +11,7 @@ android-min-sdk = "26"
 
 # The bindjs-android carrying `JsRuntime.evaluate` and `JsRuntime.renderExternal`, which
 # this package is built on. Nothing older can host an A2UI surface.
-bindjs = "0.0.30"
+bindjs = "0.0.31"
 
 androidx-core-ktx = "1.18.0"
 androidx-activity-compose = "1.13.0"

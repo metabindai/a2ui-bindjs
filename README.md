@@ -193,3 +193,8 @@ A2UISurfaceView(host = host)
 ## License
 
 Apache License 2.0.
+
+## Pending Android package migration
+
+See [Android migration instructions](android/PACKAGE_MIGRATION.md). The new
+BindJS pin depends on a package cutover that is not complete.
