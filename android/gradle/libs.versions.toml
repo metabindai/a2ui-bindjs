@@ -10,8 +10,15 @@ android-compile-sdk = "36"
 android-min-sdk = "26"
 
 # The bindjs-android carrying `JsRuntime.evaluate` and `JsRuntime.renderExternal`, which
-# this package is built on. Nothing older can host an A2UI surface.
-bindjs = "0.0.30"
+# this package is built on. Nothing older can host an A2UI surface. Two later fixes are
+# also load-bearing for templated surfaces, and both failed silently:
+#   - 0.0.31 defines `restoreEnvironmentOnly`, which `callGeometryReaderComponent` had
+#     always called and the JS runtime had never declared, so every `GeometryReader`
+#     threw and rendered nothing.
+#   - 0.0.32 gives each `ForEach` row its own hook path. The row-root branch tested the
+#     element id for truthiness and never cleared it, so row 0 was addressed unlike the
+#     rest and sibling hooks inside a row shared one storage array.
+bindjs = "0.0.32"
 
 androidx-core-ktx = "1.18.0"
 androidx-activity-compose = "1.13.0"
