@@ -54,10 +54,16 @@ jobs:
                   (cd core && pnpm pack --pack-destination /tmp/pkg)
                   (cd react && pnpm pack --pack-destination /tmp/pkg)
 
-                  node -e "
+                  # Globbed rather than named: the version moves, and a hardcoded
+                  # filename fails the build on the next bump. Core's glob needs the
+                  # digit so it does not also match the react tarball.
+                  CORE_TGZ=$(ls /tmp/pkg/metabindai-a2ui-bindjs-[0-9]*.tgz)
+                  REACT_TGZ=$(ls /tmp/pkg/metabindai-a2ui-bindjs-react-*.tgz)
+
+                  REACT_TGZ="$REACT_TGZ" node -e "
                     const { readFileSync } = require('node:fs')
                     const { execSync } = require('node:child_process')
-                    const manifest = execSync('tar -xzO -f /tmp/pkg/metabindai-a2ui-bindjs-react-0.1.0.tgz package/package.json')
+                    const manifest = execSync('tar -xzO -f ' + process.env.REACT_TGZ + ' package/package.json')
                     const dependency = JSON.parse(manifest).dependencies['@metabindai/a2ui-bindjs']
                     if (dependency.startsWith('workspace:')) {
                       throw new Error('react still depends on core by workspace range: ' + dependency)
@@ -67,7 +73,7 @@ jobs:
 
                   rm -rf /tmp/consumer && mkdir -p /tmp/consumer && cd /tmp/consumer
                   npm init -y > /dev/null
-                  npm i --silent /tmp/pkg/metabindai-a2ui-bindjs-0.1.0.tgz @metabindai/bindjs-runtime
+                  npm i --silent "$CORE_TGZ" @metabindai/bindjs-runtime
 
                   node --input-type=module -e "
                     import { SurfaceStore, validateMessages, BASIC_CATALOG_SOURCES } from '@metabindai/a2ui-bindjs'
