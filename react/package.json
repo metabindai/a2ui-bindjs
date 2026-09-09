@@ -1,6 +1,6 @@
 {
     "name": "@metabindai/a2ui-bindjs-react",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "React renderer for A2UI surfaces, built on the BindJS web renderer.",
     "license": "Apache-2.0",
     "author": "Yap Studios",
