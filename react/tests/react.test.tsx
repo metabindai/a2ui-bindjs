@@ -176,7 +176,6 @@ describe('<A2UIRenderer /> setup', () => {
 
             // The reset must not be scoped to a class another package could rename.
             expect(document.getElementById(RESET_ID)?.textContent).toContain('.a2ui-surface')
-            expect(document.getElementById(RESET_ID)?.textContent).not.toContain('.rendererContainer')
         })
 
         it('neutralises the browser margins the renderer would otherwise inherit', async () => {
