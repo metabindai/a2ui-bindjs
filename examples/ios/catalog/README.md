@@ -1,18 +1,21 @@
 # The basic catalog, natively
 
 One screen per component in the A2UI v1.0 basic catalog, and one per example surface the
-A2UI project ships — the 43 v1.0 examples and the 43 v0.9 ones every upstream gallery still
-shows — each described as A2UI and drawn by the BindJS catalog on iOS or macOS. It exists to look at the catalog: pick a component in the sidebar and see
-what an agent gets when it names it.
+A2UI project ships: the 43 v1.0 examples and the 43 v0.9 ones every upstream gallery still
+shows. Each is described as A2UI and drawn by the BindJS catalog on iOS or macOS. It
+exists to look at the catalog: pick a component in the sidebar and see what an agent gets
+when it names it.
 
-```sh
-open A2UICatalog.xcodeproj      # iOS — pick a simulator and run
-swift run                       # macOS — same sources, a window
+Run it on a simulator, as a macOS window, or headlessly:
+
+```bash
+open A2UICatalog.xcodeproj      # iOS: pick a simulator and run
+swift run                       # macOS: same sources, a window
 swift run A2UICatalog --check   # every surface, headless: decodes, no diagnostics
 ```
 
 The `.xcodeproj` is checked in so it opens and runs with no tooling. `project.yml` is what
-it is generated from — run `xcodegen` after changing it.
+it is generated from; run `xcodegen` after changing it.
 
 ## What each screen shows
 
@@ -36,12 +39,12 @@ because several of them build a surface up over a stream of messages.
 
 ## After changing a catalog component
 
-The renderer bundle is generated and committed:
+The renderer bundle is generated and committed, so regenerate it:
 
-```sh
+```bash
 pnpm sync:native
 ```
 
 Then run the app again. `--check` is the quick way to tell a broken bundle from a broken
-layout: it applies every surface — the 18 here and the 86 from the spec — and reports any
+layout: it applies every surface (the 18 here and the 86 from the spec) and reports any
 that fail to decode or produce a diagnostic.
