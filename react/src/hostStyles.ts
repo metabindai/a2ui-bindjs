@@ -30,6 +30,10 @@ const RESET = `
 .${SURFACE_CLASS} :is(ul, ol) {
     padding-left: 1.25em;
 }
+
+.${SURFACE_CLASS} .rendererContainer {
+    overflow: visible;
+}
 `
 
 /**

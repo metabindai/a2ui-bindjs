@@ -1,19 +1,25 @@
 # The basic catalog, natively
 
 One screen per component in the A2UI v1.0 basic catalog, and one per example surface the
-A2UI project ships — the 43 v1.0 examples and the 43 v0.9 ones every upstream gallery still
-shows — each described as A2UI and drawn by the BindJS catalog on Compose. It exists to look
-at the catalog: pick a component and see what an agent gets when it names it. The screens
-and messages are the iOS catalog example's, one for one.
+A2UI project ships: the 43 v1.0 examples and the 43 v0.9 ones every upstream gallery still
+shows. Each is described as A2UI and drawn by the BindJS catalog on Compose. It exists to
+look at the catalog: pick a component and see what an agent gets when it names it. The
+screens and messages are the [iOS catalog example](../../ios/catalog/README.md)'s, one for
+one.
 
-```sh
+<img src="https://github.com/user-attachments/assets/38b3a5e9-c1c5-48e3-ad9a-ad462843cc26" alt="Every basic-catalog component on its own screen, on a Pixel">
+
+Install it, run every surface headlessly, or open one screen directly:
+
+```bash
 ./gradlew -p ../../../android :catalog:installDebug                  # onto a device or emulator
 ./gradlew -p ../../../android :catalog:connectedDebugAndroidTest     # every surface, headless
 adb shell am start -n ai.metabind.a2ui.catalog/.MainActivity --es show spec09-03_calendar-day
 ```
 
-The last line opens a screen directly, which is what a screenshot script wants; ids are
-`text`, `image`, … for the basic screens, `spec-<file>` and `spec09-<file>` for the examples.
+The last line opens a screen directly, which is what a screenshot script wants. Ids are
+`text`, `image`, and so on for the basic screens, and `spec-<file>` and `spec09-<file>` for
+the examples.
 
 ## What each screen shows
 
@@ -25,10 +31,16 @@ Tapping a button logs the action the agent would have received.
 ## The spec examples
 
 The build copies `vendor/spec/v1_0` and `vendor/spec/v0_9` examples into the APK as assets,
-so the app needs nothing outside its module and no generated code — the iOS example has to
+so the app needs nothing outside its module and no generated code. The iOS example has to
 embed the same files as generated Swift because SwiftPM has no build-time asset copy. The
 two corpora have the same names; the v1.0 rewrite dropped the heading variants, so where a
 v0.9 screen looks bolder than its v1.0 twin, the file differs, not the catalog.
+
+<img src="https://github.com/user-attachments/assets/8517231e-77c4-4c32-9b1e-ea091d33d7c2" alt="The Email Compose example drawn by SwiftUI on an iPhone and by Jetpack Compose on a Pixel, side by side">
+
+<img src="https://github.com/user-attachments/assets/2941abbe-0579-4c3f-bb2f-7125e5c2ba6d" alt="The Weather Current example drawn by SwiftUI on an iPhone and by Jetpack Compose on a Pixel, side by side">
+
+<img src="https://github.com/user-attachments/assets/08a80a29-2846-406f-8e38-e83e6cb96bd3" alt="The Coffee Order example drawn by SwiftUI on an iPhone and by Jetpack Compose on a Pixel, side by side">
 
 ## One host, one store per screen
 
@@ -38,7 +50,9 @@ that the v0.9 and v1.0 files use the same surface ids.
 
 ## After changing a catalog component
 
-```sh
+Regenerate the committed renderer bundle:
+
+```bash
 pnpm sync:native:android
 ```
 
