@@ -2,6 +2,8 @@
 
 The agent says *what* to show. Your Metabind project says what it looks like.
 
+<img src="https://github.com/user-attachments/assets/c2d92667-3fbe-47ea-9ab1-c4c08c1905d4" width="600" alt="An offer card drawn by the bundled catalog, which is what the example shows until it is pointed at a Metabind project">
+
 Start it from the repository root:
 
 ```bash

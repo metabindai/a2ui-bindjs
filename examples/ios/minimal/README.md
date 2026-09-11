@@ -6,6 +6,8 @@ A SwiftUI app whose only screen is written by an agent.
 SwiftUI anywhere in this target describing the product card: it names components, binds
 them to a data model, and the catalog decides what that looks like on this platform.
 
+<img src="https://github.com/user-attachments/assets/54026bff-6fb1-4375-8787-20a3642a228e" width="360" alt="The agent's product card on an iPhone: title, price, a segmented size picker, a gift-wrap toggle, a note field and an Add to cart button">
+
 Run it on a simulator, as a macOS window, or headlessly:
 
 ```bash

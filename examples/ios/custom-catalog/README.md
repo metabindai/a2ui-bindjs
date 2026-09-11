@@ -42,6 +42,8 @@ the second panel shows.
 
 ## Flight search
 
+<img src="https://github.com/user-attachments/assets/bbf93ed2-f10e-426b-a739-ca5acc9ad2c1" alt="Flight search drawn by SwiftUI on an iPhone and by Jetpack Compose on a Pixel, side by side">
+
 A `Column` templated over three rows of the data model, each drawn by `FlightCard`, one
 A2UI type standing in for a whole row of chrome. The agent binds eleven properties and an
 action whose context is resolved per row, so the third card's tap arrives carrying
@@ -56,6 +58,8 @@ component's own business.
 inside a scrolling screen. `Column` leaves the scrolling to the host.
 
 ## Sales dashboard
+
+<img src="https://github.com/user-attachments/assets/da4da31e-e5e8-4459-b0a6-f6b45924c59c" alt="Sales dashboard drawn by SwiftUI on an iPhone and by Jetpack Compose on a Pixel, side by side">
 
 One A2UI type over three chart shapes. `Chart` takes `data` (an array of
 `{ label, value }`), a variant, and a title, and the surface names it three times: a bar
@@ -79,6 +83,8 @@ Two platform notes, both discovered rather than assumed:
   bindjs-android's to close, not this example's.
 
 ## Habitat sort
+
+<img src="https://github.com/user-attachments/assets/3ef94932-ac9f-4cfb-82cb-323a1285888c" alt="Habitat sort drawn by SwiftUI on an iPhone and by Jetpack Compose on a Pixel, side by side">
 
 `SortBoard` is one A2UI type standing in for a whole interaction: nine animals dealt in a
 shuffled deck, one face-up at a time, dragged onto one of three habitats. A drop is scored
