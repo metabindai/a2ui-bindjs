@@ -76,15 +76,13 @@ appearance to a catalog. With BindJS, that catalog can be shared across all thre
 
 ### React
 
-Install the renderer with its peer dependencies:
+Install the renderer and the core package its message types come from:
 
 ```bash
-npm i @metabindai/a2ui-bindjs-react \
-      @metabindai/bindjs-react @metabindai/bindjs-runtime \
-      react react-dom styled-components
+pnpm add @metabindai/a2ui-bindjs @metabindai/a2ui-bindjs-react
 ```
 
-For a step-by-step walk through a Vite + React 18 app, chips and a component override
+For a step-by-step walk through a Vite + React app, chips and a component override
 included, see [Getting started](docs/getting-started.md).
 
 ### iOS and macOS
