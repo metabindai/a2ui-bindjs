@@ -9,6 +9,8 @@ decides what that looks like in the browser. The same protocol draws
 [`examples/ios/minimal`](../../ios/minimal/README.md) as SwiftUI and
 [`examples/android/minimal`](../../android/minimal/README.md) as Jetpack Compose.
 
+<img src="screenshots/minimal.png" width="600" alt="A product card rendered from one A2UI message: a title, a price formatted as currency, and an Add to cart button">
+
 Start it from the repository root:
 
 ```bash

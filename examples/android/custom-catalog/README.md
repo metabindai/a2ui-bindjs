@@ -6,6 +6,8 @@ components the app wrote, registered on the host, and named by the agent as if t
 always been in the catalog. The A2UI messages and the BindJS sources are byte-for-byte the
 other examples'.
 
+![The six screens on a Pixel: the offer card as shipped, the same card with Text and Button overridden, a five-star Rating, three FlightCards, a Chart in three variants, and the SortBoard](screenshots/custom-catalog.png)
+
 Install it onto a device or emulator, or run the checks:
 
 ```bash

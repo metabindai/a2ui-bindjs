@@ -6,6 +6,11 @@ An [A2UI](https://a2ui.org) (Agent-to-UI) renderer built on
 [BindJS](https://github.com/metabindai/bindjs), with native rendering across web,
 Apple, and Android platforms using React, SwiftUI, and Jetpack Compose.
 
+<p align="center">
+  <img src="docs/images/hero.png" width="820" alt="The Flight search screen from the custom-catalog examples, drawn by SwiftUI on an iPhone and by Jetpack Compose on a Pixel">
+</p>
+<p align="center"><sub><code>FlightCard</code>, a BindJS component the app registered and the agent named, from <code>examples/ios/custom-catalog</code> and <code>examples/android/custom-catalog</code>. One source, one set of A2UI messages: SwiftUI on the left, Jetpack Compose on the right.</sub></p>
+
 ## Why BindJS
 
 [BindJS](https://github.com/metabindai/bindjs) is the open component language for

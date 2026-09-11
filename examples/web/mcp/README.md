@@ -2,6 +2,8 @@
 
 An MCP tool that answers with a UI instead of prose, rendered here with BindJS.
 
+<img src="screenshots/mcp.png" width="640" alt="Two surfaces from two MCP tools: a recipe card and a recipe form with cooking style and protein pickers, drawn through the custom catalog">
+
 Start the MCP server and the web app together, from this directory:
 
 ```bash

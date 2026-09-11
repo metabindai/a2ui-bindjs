@@ -7,6 +7,8 @@ for message. There is no Compose anywhere in this module describing the product 
 names components, binds them to a data model, and the catalog decides what that looks like
 on this platform.
 
+<img src="screenshots/minimal.png" width="360" alt="The same product card on a Pixel: title, price, a segmented size picker, a gift-wrap switch, a note field and an Add to cart button">
+
 Install it onto a device or emulator from this directory:
 
 ```bash

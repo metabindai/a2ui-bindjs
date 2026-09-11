@@ -7,6 +7,8 @@ look at the catalog: pick a component and see what an agent gets when it names i
 screens and messages are the [iOS catalog example](../../ios/catalog/README.md)'s, one for
 one.
 
+![Every basic-catalog component on its own screen, on a Pixel](screenshots/basic-catalog.png)
+
 Install it, run every surface headlessly, or open one screen directly:
 
 ```bash
@@ -33,6 +35,8 @@ so the app needs nothing outside its module and no generated code. The iOS examp
 embed the same files as generated Swift because SwiftPM has no build-time asset copy. The
 two corpora have the same names; the v1.0 rewrite dropped the heading variants, so where a
 v0.9 screen looks bolder than its v1.0 twin, the file differs, not the catalog.
+
+![Twelve of the spec examples on a Pixel: flight status, weather, product card, music player, coffee order, restaurant card, shipping status, recipe card, financial data grid, calendar day, workout summary and stats card](screenshots/spec-examples.png)
 
 ## One host, one store per screen
 
