@@ -62,6 +62,6 @@
         "yaml": "^2.9.0"
     },
     "publishConfig": {
-        "access": "restricted"
+        "access": "public"
     }
 }

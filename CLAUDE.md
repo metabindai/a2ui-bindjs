@@ -148,11 +148,11 @@ Authoring rules:
 Two packages, versioned in lockstep: `core` and `react`. Everything under `examples/` is
 `private: true` and never publishes.
 
-Both publish with `access: restricted` — private npm packages, installable by members of the
-`@metabindai` org, matching the repository while it is private. Making them public is two
-edits: `publishConfig.access` in both manifests, and the flag in `release.yml`. Do that
-before publishing a public version, since `repository`, `homepage` and `bugs` point at a URL
-that 404s for anyone outside the org.
+Both publish with `access: public` — set in `publishConfig.access` in both manifests and by
+the flag in `release.yml`. Keep the three in agreement: `--access` on publish changes an
+existing package's visibility, so a stray `restricted` would make them private again. The
+repository itself is still private, so `repository`, `homepage` and `bugs` point at a URL
+that 404s for anyone outside the org until it opens up.
 
 Publishing prompts for a 2FA one-time password unless the token is an npm **automation**
 token, which is what `NPM_TOKEN` should be so CI never has to ask.
