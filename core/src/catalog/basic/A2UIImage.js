@@ -40,7 +40,7 @@ const frameFor = (variant) => {
         return { width: variant.width, height: variant.height }
     }
 
-    return { maxWidth: variant.maxWidth ?? Infinity, height: variant.height }
+    return { maxWidth: variant.maxWidth ?? Infinity, minHeight: variant.height, maxHeight: variant.height }
 }
 
 export default defineComponent({
@@ -60,9 +60,8 @@ export default defineComponent({
     body: (props) => {
         const variant = VARIANTS[props.variant] ?? VARIANTS.mediumFeature
 
-        const sized = Image({ url: asText(props.url) })
+        const sized = Image({ url: asText(props.url), contentMode: contentModeFor(props.fit, variant) })
             .resizable()
-            .aspectRatio({ contentMode: contentModeFor(props.fit, variant) })
             .frame(frameFor(variant))
             .clipped()
 

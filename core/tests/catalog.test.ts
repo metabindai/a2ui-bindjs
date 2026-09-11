@@ -456,6 +456,53 @@ describe('parity with the official SwiftUI catalog', () => {
         expect(filled).toContain('"contentMode":"fill"')
     })
 
+    it.each([
+        ['contain', 'mediumFeature', 'fit'],
+        ['scaleDown', 'mediumFeature', 'fit'],
+        ['cover', 'mediumFeature', 'fill'],
+        ['fill', 'mediumFeature', 'fill'],
+        ['none', 'mediumFeature', 'fill'],
+        ['contain', 'header', 'fill'],
+    ])('sends Image %s/%s scaling to the native image props', (fit, variant, contentMode) => {
+        const text = rendered([{ id: 'root', component: 'Image', url: 'https://example.com/a.png', fit, variant }])
+        const images: Array<{ props: Record<string, unknown> }> = []
+        const visit = (value: unknown) => {
+            if (!value || typeof value !== 'object') return
+            const node = value as { type?: string; props: Record<string, unknown> }
+            if (node.type === 'Image') images.push(node)
+            Object.values(value).forEach(visit)
+        }
+        visit(JSON.parse(text))
+
+        expect(images).toHaveLength(1)
+        expect(images[0].props).toMatchObject({ contentMode, resizable: true })
+        // A mode-only aspectRatio modifier becomes a 1:1 layout on Android.
+        expect(text).not.toContain('"type":"aspectRatio"')
+        expect(text).toContain('"minHeight":200')
+        expect(text).toContain('"maxHeight":200')
+        expect(text).toContain('"type":"clipped"')
+    })
+
+    it.each([
+        ['smallFeature', 100],
+        ['mediumFeature', 200],
+        ['largeFeature', 320],
+        ['header', 200],
+    ])('preserves Image %s height in the Apple flexible frame', (variant, height) => {
+        const text = rendered([{ id: 'root', component: 'Image', url: 'https://example.com/a.png', variant }])
+        const frames: Array<Record<string, unknown>> = []
+        const visit = (value: unknown) => {
+            if (!value || typeof value !== 'object') return
+            const node = value as { type?: string; props: Record<string, unknown> }
+            if (node.type === 'frame') frames.push(node.props)
+            Object.values(value).forEach(visit)
+        }
+        visit(JSON.parse(text))
+        const flexible = frames.find(frame => 'maxWidth' in frame)
+        expect(flexible).toMatchObject({ minHeight: height, maxHeight: height })
+        expect(flexible).not.toHaveProperty('height')
+    })
+
     it.each(['Row', 'Column'])('distributes %s children for spaceEvenly with a Spacer at each end', (component) => {
         const text = rendered([
             { id: 'root', component, justify: 'spaceEvenly', children: ['a', 'b', 'c'] },
