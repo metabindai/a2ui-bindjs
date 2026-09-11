@@ -4,6 +4,8 @@ A Monaco editor for an A2UI message stream, a timeline to scrub it, and every vi
 result: the parsed events, the surfaces in the store, and the rendered output. It exists to
 answer "what does the renderer do with this?" without writing an app.
 
+<img src="https://github.com/user-attachments/assets/030cdedf-a212-46a6-a37e-5cb813e0f985" alt="The playground on the spec's Recipe Card example: the message stream in the editor, the timeline stepped to the last message, and the Render tab showing the card">
+
 Start it from the repository root:
 
 ```bash

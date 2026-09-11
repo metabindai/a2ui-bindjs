@@ -10,6 +10,8 @@ always been there. The A2UI messages and the sources are the ones
 [`examples/android/custom-catalog`](../../android/custom-catalog/README.md) use, byte for
 byte.
 
+<img src="https://github.com/user-attachments/assets/58c7d587-da27-423e-8f85-200fbdf62106" alt="The six screens in the browser: the offer card as shipped, the same card with Text and Button overridden, a five-star Rating, three FlightCards, a Chart in three variants, and the SortBoard">
+
 Start it from the repository root:
 
 ```bash

@@ -7,6 +7,8 @@ look at the catalog: pick a component and see what an agent gets when it names i
 screens and messages are the [iOS catalog example](../../ios/catalog/README.md)'s, one for
 one.
 
+<img src="https://github.com/user-attachments/assets/38b3a5e9-c1c5-48e3-ad9a-ad462843cc26" alt="Every basic-catalog component on its own screen, on a Pixel">
+
 Install it, run every surface headlessly, or open one screen directly:
 
 ```bash
@@ -33,6 +35,12 @@ so the app needs nothing outside its module and no generated code. The iOS examp
 embed the same files as generated Swift because SwiftPM has no build-time asset copy. The
 two corpora have the same names; the v1.0 rewrite dropped the heading variants, so where a
 v0.9 screen looks bolder than its v1.0 twin, the file differs, not the catalog.
+
+<img src="https://github.com/user-attachments/assets/8517231e-77c4-4c32-9b1e-ea091d33d7c2" alt="The Email Compose example drawn by SwiftUI on an iPhone and by Jetpack Compose on a Pixel, side by side">
+
+<img src="https://github.com/user-attachments/assets/2941abbe-0579-4c3f-bb2f-7125e5c2ba6d" alt="The Weather Current example drawn by SwiftUI on an iPhone and by Jetpack Compose on a Pixel, side by side">
+
+<img src="https://github.com/user-attachments/assets/08a80a29-2846-406f-8e38-e83e6cb96bd3" alt="The Coffee Order example drawn by SwiftUI on an iPhone and by Jetpack Compose on a Pixel, side by side">
 
 ## One host, one store per screen
 
