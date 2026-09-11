@@ -7,6 +7,8 @@ components** is types it does not have at all — a `Rating`, a `FlightCard`, a 
 `SortBoard`, all written by this app and named by the agent as if they had always been
 there.
 
+![The six screens on an iPhone: the offer card as shipped, the same card with Text and Button overridden, a five-star Rating, three FlightCards, a Chart in three variants, and the SortBoard](screenshots/custom-catalog.png)
+
 ```sh
 open A2UICustomCatalog.xcodeproj    # iOS — pick a simulator and run
 swift run                           # macOS — same sources, a window

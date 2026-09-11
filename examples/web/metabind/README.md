@@ -2,6 +2,8 @@
 
 The agent says *what* to show. Your Metabind project says what it looks like.
 
+<img src="screenshots/metabind.png" width="600" alt="An offer card drawn by the bundled catalog, which is what the example shows until it is pointed at a Metabind project">
+
 ```sh
 pnpm dev:metabind      # :5184 — runs on the bundled catalog until you configure a project
 ```

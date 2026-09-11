@@ -5,6 +5,8 @@ Android: BindJS components the app wrote, registered on the host, and named by t
 if they had always been in the catalog. The A2UI messages and the BindJS sources are
 byte-for-byte the other examples'.
 
+![The six screens on a Pixel: the offer card as shipped, the same card with Text and Button overridden, a five-star Rating, three FlightCards, a Chart in three variants, and the SortBoard](screenshots/custom-catalog.png)
+
 ```sh
 ./gradlew -p ../../../android :custom-catalog:installDebug        # onto a device or emulator
 ./gradlew -p ../../../android :custom-catalog:connectedDebugAndroidTest   # the checks

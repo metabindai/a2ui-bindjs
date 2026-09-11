@@ -6,6 +6,8 @@ A SwiftUI app whose only screen is written by an agent.
 SwiftUI anywhere in this target describing the product card: it names components, binds
 them to a data model, and the catalog decides what that looks like on this platform.
 
+<img src="screenshots/minimal.png" width="360" alt="The agent's product card on an iPhone: title, price, a segmented size picker, a gift-wrap toggle, a note field and an Add to cart button">
+
 ```sh
 open A2UIMinimal.xcodeproj      # iOS — pick a simulator and run
 swift run                       # macOS — same sources, a window
