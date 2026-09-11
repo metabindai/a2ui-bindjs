@@ -3,7 +3,7 @@
 [![CI](https://github.com/metabindai/a2ui-bindjs/actions/workflows/ci.yml/badge.svg)](https://github.com/metabindai/a2ui-bindjs/actions/workflows/ci.yml)
 
 An [A2UI](https://a2ui.org) (Agent-to-UI) renderer built on
-[BindJS](https://docs.metabind.ai/bindjs/introduction), with native rendering across web,
+[BindJS](https://github.com/metabindai/bindjs), with native rendering across web,
 Apple, and Android platforms using React, SwiftUI, and Jetpack Compose.
 
 <p align="center">
@@ -13,8 +13,9 @@ Apple, and Android platforms using React, SwiftUI, and Jetpack Compose.
 
 ## Why BindJS
 
-[BindJS](https://docs.metabind.ai/bindjs/introduction) lets you write a component once in
-JavaScript and render it with React, SwiftUI or Jetpack Compose. It uses an API modeled on
+[BindJS](https://github.com/metabindai/bindjs) is the open component language for
+agent UI: write a component once in JavaScript, with its logic, and render it with React,
+SwiftUI or Jetpack Compose. It uses an API modeled on
 SwiftUI, with a runtime that turns component definitions into a JSON AST for each platform
 to render as native views. The same `defineComponent` source can produce a
 `UISegmentedControl` on iOS and a `<select>` on the web.
@@ -23,17 +24,17 @@ This fits well with A2UI. A2UI describes components and binds them to data, leav
 appearance to a catalog. With BindJS, that catalog can be shared across all three platforms.
 
 - **One shared catalog.** The 18 components in `core/src/catalog/basic` power the web
-  examples, SwiftUI app and Compose app in this repo. Changes to those components apply
-  across all three.
+  examples, the SwiftUI app, and the Compose app in this repo. Changes to those components
+  apply across all three.
 - **Native rendering.** On Apple and Android platforms, components render through SwiftUI
-  and Jetpack Compose, with native gestures, animations and typography.
+  and Jetpack Compose, with native gestures, animations, and typography.
 - **A shared protocol engine.** The TypeScript interpreter bundles into a single
   dependency-free file, about 34 KB gzipped. Native apps embed it to handle parsing, data,
-  functions and diffing without implementing the protocol themselves.
+  functions, and diffing without implementing the protocol themselves.
 - **Catalog updates at runtime.** Hosts can fetch and register updated component
-  definitions without an app release. `examples/web/metabind` loads a catalog from a
-  Metabind project, while `examples/web/custom-catalog` shows how to override individual
-  components.
+  definitions without an app release. [`examples/web/metabind`](examples/web/metabind/README.md)
+  loads a catalog from a Metabind project, while `examples/web/custom-catalog` shows how to
+  override individual components.
 
 ## Protocol support
 
@@ -53,7 +54,7 @@ appearance to a catalog. With BindJS, that catalog can be shared across all thre
 | `callRendererFunction`  | agent → renderer | Parsed and dispatched as a store event for hosts to subscribe to |
 | `agentFunctionResponse` | agent → renderer | Parsed and dispatched as a store event for hosts to subscribe to |
 | `action`                | renderer → agent | Web, iOS, Android                                                |
-| `error`                 | renderer → agent | Web, iOS, Android — opt-in, per `validate`                       |
+| `error`                 | renderer → agent | Web, iOS, Android (opt-in, per `validate`)                       |
 
 ### Basic catalog
 
@@ -78,30 +79,37 @@ appearance to a catalog. With BindJS, that catalog can be shared across all thre
 
 ## Installing
 
-**React**
+### React
 
-```sh
-npm i @metabindai/a2ui-bindjs-react \
-      @metabindai/bindjs-react @metabindai/bindjs-runtime \
-      react react-dom styled-components
+Install the renderer and the core package its message types come from:
+
+```bash
+pnpm add @metabindai/a2ui-bindjs @metabindai/a2ui-bindjs-react
 ```
 
-**iOS and macOS**
+For a step-by-step walk through a Vite + React app, chips and a component override
+included, see [Getting started](docs/getting-started.md).
+
+### iOS and macOS
+
+Add the package to your `Package.swift`, then depend on the `A2UI` product:
 
 ```swift
 .package(url: "https://github.com/metabindai/a2ui-bindjs.git", from: "0.1.0")
 ```
 
-then depend on the `A2UI` product.
+### Android
 
-**Android**
+Add the artifact to your module's dependencies:
 
 ```kotlin
 implementation("ai.metabind:a2ui-bindjs-android:0.1.0")
 ```
 
-then see `android/README.md` for the repository configuration, which needs a token because
-GitHub Packages requires authentication even to read.
+> [!NOTE]
+> The artifact is served from GitHub Packages, which requires a token even to read. See
+> [Consuming the artifact](android/README.md#consuming-the-artifact) for the repository
+> configuration, the minimum SDK, and the compile settings the AAR expects.
 
 ## Layout
 
@@ -109,43 +117,45 @@ The top level splits by platform. `vendor/spec/` is the protocol itself.
 
 | Path                  | Package                           | Role                                                                       |
 | --------------------- | --------------------------------- | -------------------------------------------------------------------------- |
-| `vendor/spec/`        | —                                 | Verbatim A2UI v1.0 schemas and examples. Never edited; the build reads it. |
-| `vendor/conformance/` | —                                 | The official A2UI conformance suite, vendored. `pnpm test` runs it.        |
+| `vendor/spec/`        | n/a                               | Verbatim A2UI v1.0 schemas and examples. Never edited; the build reads it. |
+| `vendor/conformance/` | n/a                               | The official A2UI conformance suite, vendored. `pnpm test` runs it.        |
 | `core/`               | `@metabindai/a2ui-bindjs`         | Protocol, store, function library, rendering engine, catalog. No React.    |
 | `react/`              | `@metabindai/a2ui-bindjs-react`   | `<A2UIRenderer />` and hooks, on the BindJS web renderer. Depends on core. |
 | `ios/`                | `a2ui-bindjs-apple` (Swift)       | `A2UIHost` and `A2UISurfaceView`. Embeds core's renderer bundle.           |
 | `android/`            | `ai.metabind:a2ui-bindjs-android` | `A2UIHost` and `A2UISurfaceView` on Compose. Embeds the same bundle.       |
-| `examples/`           | private                           | Grouped by platform: `web/`, `ios/` and `android/`.                        |
+| `examples/`           | private                           | Grouped by platform: `web/`, `ios/`, and `android/`.                       |
 
-Core is published and React consumes it as a package, so a host that renders natively — or
-on a platform React never reaches — takes core alone.
+Core is published and React consumes it as a package, so a host that renders natively, or
+on a platform React never reaches, takes core alone.
 
 ## Examples
 
-| Path                              | What it shows                                                                           |
-| --------------------------------- | --------------------------------------------------------------------------------------- |
-| `examples/web/minimal`            | The smallest thing that renders a surface — about 40 lines, action round-trip included  |
-| `examples/web/custom-catalog`     | Two components overridden — `sources` plus one catalog entry, no runtime needed         |
-| `examples/web/metabind`           | Catalog components fetched from a Metabind project rather than bundled                  |
-| `examples/web/mcp`                | A2UI over MCP: tools that answer with a UI instead of prose                             |
-| `examples/web/playground`         | Monaco message-stream editor, scrubbable timeline, and the 43 official spec examples    |
-| `examples/ios/minimal`            | The same protocol drawn in SwiftUI, sharing one BindJS runtime with the host            |
-| `examples/ios/catalog`            | Every basic-catalog component on its own screen, each a real A2UI surface               |
-| `examples/ios/custom-catalog`     | A component the app registers and the agent names — the web example's source, unchanged |
-| `examples/android/minimal`        | The same surface again, message for message, on Jetpack Compose                         |
-| `examples/android/catalog`        | The catalog screens on Compose, decoded through the sandbox                             |
-| `examples/android/custom-catalog` | `useCatalog` on Android, sharing that same `Rating` source                              |
+| Path                                                                       | What it shows                                                                          |
+| -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| [`examples/web/minimal`](examples/web/minimal/README.md)                   | The smallest thing that renders a surface, action round-trip included                  |
+| [`examples/web/custom-catalog`](examples/web/custom-catalog/README.md)     | Two components overridden with `sources` plus one catalog entry, no runtime needed     |
+| [`examples/web/metabind`](examples/web/metabind/README.md)                 | Catalog components fetched from a Metabind project rather than bundled                 |
+| [`examples/web/mcp`](examples/web/mcp/README.md)                           | A2UI over MCP: tools that answer with a UI instead of prose                            |
+| [`examples/web/playground`](examples/web/playground/README.md)             | Monaco message-stream editor, scrubbable timeline, and the 43 official spec examples   |
+| [`examples/ios/minimal`](examples/ios/minimal/README.md)                   | The same protocol drawn in SwiftUI, sharing one BindJS runtime with the host           |
+| [`examples/ios/catalog`](examples/ios/catalog/README.md)                   | Every basic-catalog component on its own screen, each a real A2UI surface              |
+| [`examples/ios/custom-catalog`](examples/ios/custom-catalog/README.md)     | A component the app registers and the agent names, using the web example's source unchanged |
+| [`examples/android/minimal`](examples/android/minimal/README.md)           | The same surface again, message for message, on Jetpack Compose                        |
+| [`examples/android/catalog`](examples/android/catalog/README.md)           | The catalog screens on Compose, decoded through the sandbox                            |
+| [`examples/android/custom-catalog`](examples/android/custom-catalog/README.md) | `useCatalog` on Android, sharing that same `Rating` source                         |
 
-```sh
+Build and test everything, then start whichever example you want:
+
+```bash
 pnpm install
 pnpm build                  # every package and example
 pnpm test
 
-pnpm dev:minimal            # :5182 — start here
+pnpm dev:minimal            # :5182, start here
 pnpm dev:custom-catalog     # :5183
 pnpm dev:metabind           # :5184
 pnpm dev:mcp                # :5185 + MCP server on :8787
-pnpm dev:playground         # :5181  (also `pnpm dev`)
+pnpm dev:playground         # :5181 (also `pnpm dev`)
 
 pnpm dev:ios                # the minimal example on an iOS simulator
 pnpm dev:ios:catalog        # every catalog component, on a simulator
@@ -161,27 +171,38 @@ pnpm dev:android:custom-catalog
 
 ### React
 
+Build a store from the agent's messages, then hand it to the renderer:
+
 ```tsx
+import type { ActionMessage, AgentMessage } from '@metabindai/a2ui-bindjs'
 import { useA2UIStore, A2UIRenderer } from '@metabindai/a2ui-bindjs-react'
 
-const { store } = useA2UIStore(messages)
+function Surface({ messages, sendToAgent }: { messages: AgentMessage[]; sendToAgent: (action: ActionMessage) => void }) {
+    const { store } = useA2UIStore(messages)
 
-<A2UIRenderer store={store} onAction={sendToAgent} />
+    return <A2UIRenderer store={store} onAction={sendToAgent} />
+}
 ```
 
 ### iOS
+
+Create a host, subscribe to actions, apply messages, and put the view in a SwiftUI body:
 
 ```swift
 import A2UI
 
 let host = A2UIHost()
-host.onAction = { action in … }
+host.onAction = { action in
+    // send it to the agent
+}
 host.apply(messagesFromTheAgent)
 
 A2UISurfaceView(host: host)
 ```
 
 ### Android
+
+The same shape on Compose. `apply` suspends, and `A2UISurfaceView` is a composable:
 
 ```kotlin
 import ai.metabind.a2ui.A2UIHost
@@ -190,11 +211,13 @@ import ai.metabind.a2ui.A2UISurfaceView
 val host = A2UIHost(context)
 host.apply(messagesFromTheAgent)
 
-host.actions.collect { action -> … }
+host.actions.collect { action ->
+    // send it to the agent
+}
 
 A2UISurfaceView(host = host)
 ```
 
 ## License
 
-Apache License 2.0.
+[Apache License 2.0](LICENSE).

@@ -13,7 +13,7 @@ undeployed; its `TODO.md` says what would have to happen first. It consumes the 
 
 ## Commands
 
-```sh
+```bash
 pnpm install
 pnpm build
 pnpm test
@@ -37,14 +37,14 @@ When adding or changing a catalog component, read its definition in
 property it declares. A property the component never mentions is invisible: the engine
 passes props through, so an agent setting it gets silence rather than a diagnostic. That is
 how `DateTimeInput` came to read a `mode` prop that v1.0 does not define while ignoring
-`enableDate`, `enableTime`, `min` and `max`.
+`enableDate`, `enableTime`, `min`, and `max`.
 
 `weight` is the exception — it is declared on a child but read by its `Row` or `Column`
 parent, which the engine hands `childWeights` because only the engine can see each child's
 node. Guessing a component's shape is how Tabs
 (`tabs: [{title, child}]`, not `children` + labels) and Modal (`trigger` / `content`, not
-positional children) were shipped broken — and because the engine simply ignores child
-ids in properties it does not know about, neither produced a diagnostic.
+positional children) were shipped broken. Because the engine ignores child ids in
+properties it does not know about, neither produced a diagnostic.
 
 ## Conformance
 
@@ -121,14 +121,14 @@ Authoring rules:
   `UISegmentedControl` on iOS and a `<select>` on the web, instead of styled `Button`s that
   look native on neither, and it produces a smaller AST.
 - Props carry their **A2UI names**. The engine passes them through; it makes no
-  presentation decisions, so anything about spacing, fonts or colour belongs here.
+  presentation decisions, so anything about spacing, fonts, or color belongs here.
 - The engine injects exactly two things: `action` (a function) on nodes with an A2UI
   action, and `set<Prop>` for each path-bound prop (`value` → `setValue`).
-- **A component that calls `useState` must be listed in `STATEFUL_TYPES`** in
-  `src/engine/catalog.ts`. The engine memoises subtrees, and a stateful component whose
-  output can change without its A2UI inputs changing would be frozen in whatever state it
-  was last built with. This list is hand-maintained — it is the one place the catalog is
-  not generated from the spec.
+- **A component that calls `useState` needs no registration.** The engine memoizes
+  subtrees by comparing the data model, and a stateful component's output can change
+  without its A2UI inputs changing, so `src/engine/hookState.ts` observes
+  `runtime.needsRerender` (which every hook setter calls) and invalidates the cache on
+  each change. Nothing declares itself stateful; the old `STATEFUL_TYPES` list is gone.
 - Components are stateless wherever the data model can own the value. Local `useState`
   is only for state A2UI has nowhere to put (`Modal.open`, `Tabs.selectedIndex` when
   unbound) — and those read `set<Prop>` first so a bound path still wins.
@@ -136,11 +136,11 @@ Authoring rules:
   defaults in the body, and beware boolean props: `!undefined` is `true`.
 - Build each branch its own component instance; hanging two modifier stacks off one
   shared instance renders nothing on the web backend.
-- **Only use colour names BindJS knows**: `clear`, `red`, `orange`, `yellow`, `green`,
+- **Only use color names BindJS knows**: `clear`, `red`, `orange`, `yellow`, `green`,
   `mint`, `teal`, `cyan`, `blue`, `indigo`, `purple`, `pink`, `brown`, `black`, `white`,
   `gray`, `primary`, `secondary`, `tertiary`, `quaternary`, `accent`, `background`, or a
   `#hex`. UIKit-style names like `secondarySystemBackground` or `label` are **not**
-  valid — they do not throw, they simply produce no colour, so a control silently stops
+  valid: they do not throw, they produce no color, so a control silently stops
   reflecting its own state. `tests/colors.test.ts` checks every catalog source.
 
 ## Releasing
@@ -148,11 +148,11 @@ Authoring rules:
 Two packages, versioned in lockstep: `core` and `react`. Everything under `examples/` is
 `private: true` and never publishes.
 
-Both publish with `access: restricted` — private npm packages, installable by members of the
-`@metabindai` org, matching the repository while it is private. Making them public is two
-edits: `publishConfig.access` in both manifests, and the flag in `release.yml`. Do that
-before publishing a public version, since `repository`, `homepage` and `bugs` point at a URL
-that 404s for anyone outside the org.
+Both publish with `access: public` — set in `publishConfig.access` in both manifests and by
+the flag in `release.yml`. Keep the three in agreement: `--access` on publish changes an
+existing package's visibility, so a stray `restricted` would make them private again. The
+repository itself is still private, so `repository`, `homepage`, and `bugs` point at a URL
+that 404s for anyone outside the org until it opens up.
 
 Publishing prompts for a 2FA one-time password unless the token is an npm **automation**
 token, which is what `NPM_TOKEN` should be so CI never has to ask.
@@ -165,9 +165,10 @@ token, which is what `NPM_TOKEN` should be so CI never has to ask.
 `workflow_dispatch` on that workflow does a dry run by default — packs and validates
 without publishing.
 
-**Publish with `pnpm`, never `npm`.** react depends on core through `workspace:^`, and only
-pnpm rewrites that into a real semver range on pack. Publishing with npm ships a dependency
-no consumer can resolve. The packaging job in `ci.yml` asserts the rewrite happened.
+> [!IMPORTANT]
+> Publish with `pnpm`, never `npm`. react depends on core through `workspace:^`, and only
+> pnpm rewrites that into a real semver range on pack. Publishing with npm ships a dependency
+> no consumer can resolve. The packaging job in `ci.yml` asserts the rewrite happened.
 
 Both packages build on `prepack`, because `dist/` and `dist-bundle/` are generated and
 gitignored — without it a clean checkout publishes nothing but a `package.json`.
@@ -208,12 +209,13 @@ there must only be one — a `handlerId` resolves against the instance that stor
 hook state is keyed by path within that instance. `swift run A2UIMinimal --check` runs the
 bridge headlessly, which distinguishes a broken bundle from a broken layout.
 
-**A native host must subscribe to the store.** Nothing else will make it redraw: a
-control writing back into the data model does not touch BindJS hook state — the model owns
-the value — so the runtime never marks itself dirty and `BindJSContext` publishes nothing.
-`a2ui.onChange(cb)` is the native equivalent of `useA2UIStore`'s `useSyncExternalStore`.
-Without it the store updates correctly and the screen keeps showing the tree it drew first.
-`swift run A2UIMinimal --check` step 12 asserts the whole chain.
+> [!IMPORTANT]
+> A native host must subscribe to the store. Nothing else will make it redraw: a control
+> writing back into the data model does not touch BindJS hook state (the model owns the
+> value), so the runtime never marks itself dirty and `BindJSContext` publishes nothing.
+> `a2ui.onChange(cb)` is the native equivalent of `useA2UIStore`'s `useSyncExternalStore`.
+> Without it the store updates correctly and the screen keeps showing the tree it drew first.
+> `swift run A2UIMinimal --check` step 12 asserts the whole chain.
 
 ### Android
 
@@ -261,7 +263,7 @@ BindJS source) and a `catalog` pointing at it, and `<A2UIRenderer>` registers th
 runtime it already owns — no `BindJSRuntime` to construct. Registration happens in a
 `useMemo` during render, not an effect, so the first paint already has them, and it is
 guarded by content rather than object identity so an inline literal does not re-register
-every render and throw away memoised subtrees.
+every render and throw away memoized subtrees.
 
 Pass a `runtime` instead only when you have other BindJS components to register, or several
 renderers that should share hook state. `examples/web/custom-catalog` shows the short way;
@@ -270,7 +272,7 @@ renderers that should share hook state. `examples/web/custom-catalog` shows the 
 Natively it is `host.useCatalog(sources:catalog:)` on iOS and `host.useCatalog(sources,
 catalog)` on Android, before the first surface arrives. The bridge merges `catalog` over the
 basic one, so a host names only the entries it adds or replaces. The same call adds a type
-the basic catalog lacks — `examples/ios/custom-catalog`, `examples/android/custom-catalog`
+the basic catalog lacks — `examples/ios/custom-catalog`, `examples/android/custom-catalog`,
 and the web example register a `Rating` from one shared source.
 
 The Android examples (`examples/android/{minimal,catalog,custom-catalog}`) build from
@@ -306,7 +308,7 @@ single-file bundle for the native hosts (`pnpm build:bundle`), and the build fai
 dependencies — the host supplies the runtime, and the engine only talks to it through the
 structural `BindJSRuntimeLike` interface.
 
-## Code style — optimise for readability
+## Code style: optimize for readability
 
 Prettier (`pnpm format`) handles the mechanical part: 4-space indent, no semicolons, single quotes. On top of that:
 
