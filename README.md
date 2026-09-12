@@ -106,13 +106,21 @@ Add the package to your `Package.swift`, then depend on the `A2UI` product:
 Add the artifact to your module's dependencies:
 
 ```kotlin
-implementation("ai.metabind:a2ui-bindjs-android:0.1.0")
+implementation("ai.metabind:a2ui-bindjs-android:0.1.1")
 ```
 
-> [!NOTE]
-> The artifact is served from GitHub Packages, which requires a token even to read. See
-> [Consuming the artifact](android/README.md#consuming-the-artifact) for the repository
-> configuration, the minimum SDK, and the compile settings the AAR expects.
+It comes from GitHub Packages, which makes everyone log in even for public packages, so put
+a GitHub token in `~/.gradle/gradle.properties`:
+
+```properties
+gpr.user=your-github-username
+gpr.key=your-token
+```
+
+Any GitHub account works, with the `read:packages` scope — `repo` on its own is not enough.
+[Consuming the artifact](android/README.md#consuming-the-artifact) has the repository block
+(two entries: this package and `bindjs-android`), the minimum SDK, and the compile settings
+to match.
 
 ## Layout
 

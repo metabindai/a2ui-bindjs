@@ -78,7 +78,7 @@ publishing {
         register<MavenPublication>("release") {
             groupId = "ai.metabind"
             artifactId = "a2ui-bindjs-android"
-            version = "0.1.0"
+            version = "0.1.1"
 
             pom {
                 name.set("a2ui-bindjs-android")
