@@ -7,4 +7,4 @@ export * from './catalog/index.js'
 export * from './native/index.js'
 export * from './validation/index.js'
 
-export const VERSION = '0.1.1'
+export const VERSION = '0.1.2'
