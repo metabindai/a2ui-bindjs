@@ -498,7 +498,7 @@ describe('parity with the official SwiftUI catalog', () => {
             Object.values(value).forEach(visit)
         }
         visit(JSON.parse(text))
-        const flexible = frames.find(frame => 'maxWidth' in frame)
+        const flexible = frames.find((frame) => 'maxWidth' in frame)
         expect(flexible).toMatchObject({ minHeight: height, maxHeight: height })
         expect(flexible).not.toHaveProperty('height')
     })
