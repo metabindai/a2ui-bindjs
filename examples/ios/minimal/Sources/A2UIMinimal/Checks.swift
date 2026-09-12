@@ -78,6 +78,18 @@ func runChecks() {
     print("10. reflects it    ", evaluate("a2ui.renderJSON('main')").contains("\"S\"") ? "yes" : "NO")
 
     subscription.cancel()
+
+    // The device-locale default, which every example here overrides with "en-US" and so
+    // never exercised. `Agent.opening` calls `formatCurrency`, and `Intl` throws on an ICU
+    // identifier, so this renders nothing at all if the fallback stops being a BCP 47 tag.
+    let deviceHost = A2UIHost()
+    deviceHost.apply(Agent.opening)
+
+    let deviceRender = deviceHost.context.javaScriptContext.evaluateScript("a2ui.renderJSON('main')")?.toString() ?? ""
+    let formatted = deviceRender.contains("129")
+
+    print("11. device locale  ", formatted ? "formats (\(Locale.current.identifier(.bcp47)))" : "THREW — check the locale tag")
+    print("12. its diagnostics", deviceHost.diagnostics.isEmpty ? "none" : deviceHost.diagnostics.map(\.description).joined(separator: "; "))
 }
 
 // MARK: - Fixtures

@@ -51,7 +51,11 @@ public final class A2UIHost: ObservableObject {
             return
         }
 
-        attach(bridge, locale: locale ?? Locale.current.identifier, timeZone: timeZone ?? TimeZone.current.identifier)
+        // `.bcp47`, not `identifier`: the plain one is ICU form (`en_US`), and `Intl` throws
+        // `RangeError` on the underscore rather than tolerating it — so a host that left the
+        // default in place would fail the first time a surface called `formatCurrency`.
+        // `bindjs-android` reaches the same tag through `Locale.toLanguageTag()`.
+        attach(bridge, locale: locale ?? Locale.current.identifier(.bcp47), timeZone: timeZone ?? TimeZone.current.identifier)
         observeSurfaces(bridge)
         forwardActions(bridge)
     }

@@ -215,7 +215,7 @@ bridge headlessly, which distinguishes a broken bundle from a broken layout.
 > value), so the runtime never marks itself dirty and `BindJSContext` publishes nothing.
 > `a2ui.onChange(cb)` is the native equivalent of `useA2UIStore`'s `useSyncExternalStore`.
 > Without it the store updates correctly and the screen keeps showing the tree it drew first.
-> `swift run A2UIMinimal --check` step 12 asserts the whole chain.
+> `swift run A2UIMinimal --check` steps 9 and 10 assert the whole chain.
 
 ### Android
 
