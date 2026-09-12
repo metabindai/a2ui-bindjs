@@ -65,7 +65,7 @@ Then add the dependency to your module:
 
 ```kotlin
 dependencies {
-    implementation("ai.metabind:a2ui-bindjs-android:0.1.0")
+    implementation("ai.metabind:a2ui-bindjs-android:0.1.1")
 }
 ```
 
