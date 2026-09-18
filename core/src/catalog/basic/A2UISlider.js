@@ -3,7 +3,9 @@
 // A2UI props: label, value (two-way bound number), min, max, steps, checks.
 //
 // `steps` is the number of discrete divisions across the range, not the size of one —
-// so the step size is derived here. BindJS's Slider callback is already named `setValue`,
+// so the step size is derived here. BindJS's Slider takes the bounds as a single
+// `range: [lower, upper]` pair; both native renderers fall back to `[0, 1]` when it is
+// missing, which clamps the thumb and leaves it two positions to snap between. BindJS's Slider callback is already named `setValue`,
 // which is exactly what the engine injects for a path-bound `value`.
 //
 // The current value is shown beside the label, as the official SwiftUI catalog does: a
@@ -55,8 +57,7 @@ export default defineComponent({
         const slider = Slider({
             value,
             setValue,
-            lowerBound,
-            upperBound,
+            range: [lowerBound, upperBound],
             step: steps > 0 ? (upperBound - lowerBound) / steps : null,
             label: asText(props.label),
         })

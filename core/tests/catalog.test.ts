@@ -575,6 +575,17 @@ describe('parity with the official SwiftUI catalog', () => {
         expect(text).toContain('"rawValue":"40"')
     })
 
+    // The native Sliders read the bounds as one `range` pair and fall back to 0..1 when it
+    // is absent, so a mis-named bound leaves a working-looking slider with two positions.
+    it('sends the Slider bounds as the native range pair', () => {
+        const text = rendered([{ id: 'root', component: 'Slider', label: 'Budget', value: 125, min: 0, max: 500, steps: 20 }])
+
+        expect(text).toContain('"range":[0,500]')
+        expect(text).toContain('"step":25')
+        expect(text).not.toContain('lowerBound')
+        expect(text).not.toContain('upperBound')
+    })
+
     it('passes a Video poster frame', () => {
         const text = rendered([
             { id: 'root', component: 'Video', url: 'https://example.com/a.mp4', posterUrl: 'https://example.com/p.jpg' },
