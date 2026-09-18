@@ -3,6 +3,7 @@ dist
 dist-runtime
 *.tsbuildinfo
 .DS_Store
+.idea/
 .turbo
 *.log
 .npmrc
