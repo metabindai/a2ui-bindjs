@@ -18,7 +18,7 @@ android-min-sdk = "26"
 #   - 0.0.32 gives each `ForEach` row its own hook path. The row-root branch tested the
 #     element id for truthiness and never cleared it, so row 0 was addressed unlike the
 #     rest and sibling hooks inside a row shared one storage array.
-bindjs = "0.0.32"
+bindjs = "0.0.33"
 
 androidx-core-ktx = "1.18.0"
 androidx-activity-compose = "1.13.0"
