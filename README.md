@@ -48,16 +48,16 @@ appearance to a catalog. With BindJS, that catalog can be shared across all thre
 
 ### Messages
 
-| Message                 | Direction        | Support                                                          |
-| ----------------------- | ---------------- | ---------------------------------------------------------------- |
-| `createSurface`         | agent → renderer | Web, iOS, Android                                                |
-| `updateComponents`      | agent → renderer | Web, iOS, Android                                                |
-| `updateDataModel`       | agent → renderer | Web, iOS, Android                                                |
-| `deleteSurface`         | agent → renderer | Web, iOS, Android                                                |
-| `callRendererFunction`  | agent → renderer | Parsed and dispatched as a store event for hosts to subscribe to |
-| `agentFunctionResponse` | agent → renderer | Parsed and dispatched as a store event for hosts to subscribe to |
-| `action`                | renderer → agent | Web, iOS, Android                                                |
-| `error`                 | renderer → agent | Web, iOS, Android (opt-in, per `validate`)                       |
+| Message                 | Direction        | Support                                                                                          |
+| ----------------------- | ---------------- | ------------------------------------------------------------------------------------------------ |
+| `createSurface`         | agent → renderer | Web, iOS, Android                                                                                |
+| `updateComponents`      | agent → renderer | Web, iOS, Android                                                                                |
+| `updateDataModel`       | agent → renderer | Web, iOS, Android                                                                                |
+| `deleteSurface`         | agent → renderer | Web, iOS, Android                                                                                |
+| `callRendererFunction`  | agent → renderer | Web (store event for hosts to subscribe to); iOS, Android parse it but expose no host-facing API |
+| `agentFunctionResponse` | agent → renderer | Web (store event for hosts to subscribe to); iOS, Android parse it but expose no host-facing API |
+| `action`                | renderer → agent | Web, iOS, Android                                                                                |
+| `error`                 | renderer → agent | Web, iOS, Android — opt-in, per `validate`                                                       |
 
 ### Basic catalog
 
