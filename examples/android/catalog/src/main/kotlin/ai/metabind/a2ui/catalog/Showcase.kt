@@ -141,7 +141,7 @@ object Showcases {
         "A player with the platform's controls. posterUrl reaches it as the poster frame.",
         """
         { "id": "root", "component": "Video",
-          "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+          "url": "https://www.w3schools.com/html/mov_bbb.mp4",
           "posterUrl": "https://picsum.photos/seed/a2ui-poster/600/340",
           "description": "Big Buck Bunny" }
         """,

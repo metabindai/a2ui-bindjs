@@ -126,7 +126,8 @@ var A2UI = (() => {
 //
 // A2UI props: url (required), description.
 // Interim implementation over the video built-in, kept short so it reads as a control
-// strip rather than a video frame, pending a native audio builder.
+// strip rather than a video frame, pending a native audio builder. Not shorter than 120:
+// below that AVKit's player draws no controls at all, so on iOS the strip cannot be played.
 
 /**
  * A2UI's DynamicString resolves to whatever the data model holds, so a binding can arrive
@@ -148,7 +149,7 @@ exports.default = defineComponent({
     },
 
     body: (props) => {
-        const player = Video({ url: asText(props.url) }).frame({ maxWidth: Infinity, height: 64 }).cornerRadius(8)
+        const player = Video({ url: asText(props.url) }).frame({ maxWidth: Infinity, height: 120 }).cornerRadius(8)
 
         if (!props.description) {
             return player
