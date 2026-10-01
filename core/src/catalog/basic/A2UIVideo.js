@@ -29,7 +29,7 @@ export default defineComponent({
         const poster = asText(props.posterUrl)
         const source = poster ? { url: asText(props.url), poster } : { url: asText(props.url) }
 
-        const player = Video(source).frame({ maxWidth: Infinity, height: 220 }).cornerRadius(8)
+        const player = Video(source).frame({ maxWidth: Infinity }).frame({ height: 220 }).cornerRadius(8)
 
         return props.description ? player.accessibilityLabel(asText(props.description)) : player
     },

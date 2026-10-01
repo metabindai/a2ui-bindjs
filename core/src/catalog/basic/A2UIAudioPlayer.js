@@ -25,7 +25,7 @@ export default defineComponent({
     },
 
     body: (props) => {
-        const player = Video({ url: asText(props.url) }).frame({ maxWidth: Infinity, height: 120 }).cornerRadius(8)
+        const player = Video({ url: asText(props.url) }).frame({ maxWidth: Infinity }).frame({ height: 120 }).cornerRadius(8)
 
         if (!props.description) {
             return player
