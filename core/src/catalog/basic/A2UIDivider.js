@@ -21,7 +21,7 @@ export default defineComponent({
         if (props.axis === "vertical") {
             return Rectangle()
                 .foregroundStyle(Color("quaternary"))
-                .frame({ width: 1, maxHeight: Infinity })
+                .frame({ width: 1 }).frame({ maxHeight: Infinity })
         }
 
         return Divider()

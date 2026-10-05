@@ -167,7 +167,7 @@ const code = (text) =>
 
 const quote = (text, variant) =>
     HStack({ spacing: 8, alignment: "top" }, [
-        Rectangle().foregroundStyle(Color("quaternary")).frame({ width: 3, maxHeight: Infinity }),
+        Rectangle().foregroundStyle(Color("quaternary")).frame({ width: 3 }).frame({ maxHeight: Infinity }),
         paragraph(text, variant).foregroundStyle(Color("secondary")),
     ])
 

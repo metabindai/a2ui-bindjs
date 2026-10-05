@@ -35,12 +35,15 @@ const contentModeFor = (fit, variant) => {
     return fit === "contain" || fit === "scaleDown" ? "fit" : "fill"
 }
 
-const frameFor = (variant) => {
+// A fixed size and bounds never share one `frame` call: BindJS takes one or the other, and
+// Apple reads a mixed call as bounds only. Equal min/max heights are not a substitute —
+// the web draws the image at `height: 100%`, which an indefinite parent resolves to zero.
+const framed = (image, variant) => {
     if (variant.width) {
-        return { width: variant.width, height: variant.height }
+        return image.frame({ width: variant.width, height: variant.height })
     }
 
-    return { maxWidth: variant.maxWidth ?? Infinity, minHeight: variant.height, maxHeight: variant.height }
+    return image.frame({ maxWidth: variant.maxWidth ?? Infinity }).frame({ height: variant.height })
 }
 
 export default defineComponent({
@@ -60,10 +63,8 @@ export default defineComponent({
     body: (props) => {
         const variant = VARIANTS[props.variant] ?? VARIANTS.mediumFeature
 
-        const sized = Image({ url: asText(props.url), contentMode: contentModeFor(props.fit, variant) })
-            .resizable()
-            .frame(frameFor(variant))
-            .clipped()
+        const image = Image({ url: asText(props.url), contentMode: contentModeFor(props.fit, variant) }).resizable()
+        const sized = framed(image, variant).clipped()
 
         let shaped
 

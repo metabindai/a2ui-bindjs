@@ -478,8 +478,7 @@ describe('parity with the official SwiftUI catalog', () => {
         expect(images[0].props).toMatchObject({ contentMode, resizable: true })
         // A mode-only aspectRatio modifier becomes a 1:1 layout on Android.
         expect(text).not.toContain('"type":"aspectRatio"')
-        expect(text).toContain('"minHeight":200')
-        expect(text).toContain('"maxHeight":200')
+        expect(text).toContain('"height":200')
         expect(text).toContain('"type":"clipped"')
     })
 
@@ -488,7 +487,7 @@ describe('parity with the official SwiftUI catalog', () => {
         ['mediumFeature', 200],
         ['largeFeature', 320],
         ['header', 200],
-    ])('preserves Image %s height in the Apple flexible frame', (variant, height) => {
+    ])('gives Image %s its height in a frame of its own', (variant, height) => {
         const text = rendered([{ id: 'root', component: 'Image', url: 'https://example.com/a.png', variant }])
         const frames: Array<Record<string, unknown>> = []
         const visit = (value: unknown) => {
@@ -498,9 +497,14 @@ describe('parity with the official SwiftUI catalog', () => {
             Object.values(value).forEach(visit)
         }
         visit(JSON.parse(text))
+        // Apple reads a frame mixing a size with bounds as bounds only, and equal min/max
+        // heights leave the web's `height: 100%` image with nothing definite to fill.
         const flexible = frames.find((frame) => 'maxWidth' in frame)
-        expect(flexible).toMatchObject({ minHeight: height, maxHeight: height })
+        const fixed = frames.find((frame) => 'height' in frame)
         expect(flexible).not.toHaveProperty('height')
+        expect(flexible).not.toHaveProperty('minHeight')
+        expect(fixed).toMatchObject({ height })
+        expect(fixed).not.toHaveProperty('maxWidth')
     })
 
     it.each(['Row', 'Column'])('distributes %s children for spaceEvenly with a Spacer at each end', (component) => {
