@@ -110,7 +110,7 @@ Two traps live at the boundary and neither shows up on the web:
   catalog property is. `A2UICheckBox` drew as an unexplained switch on Android for exactly
   that reason: `ToggleComponentProps` had no `label` field, so Gson dropped it.
 
-`src/catalog/basic/*.js` are real BindJS sources, edited on disk. `pnpm build:catalog`
+`src/catalog/basic/*.js` are real BindJS sources, edited on disk. `pnpm --filter @metabindai/a2ui-bindjs build:catalog`
 (also run by `build` and `test`) inlines them into `src/catalog/basic/sources.generated.ts`
 — generated, gitignored, never edited by hand.
 
