@@ -14,8 +14,8 @@
     "dependencies": {
         "@metabindai/a2ui-bindjs": "workspace:*",
         "@metabindai/a2ui-bindjs-react": "workspace:*",
-        "@metabindai/bindjs-react": "^1.0.5",
-        "@metabindai/bindjs-runtime": "^1.0.9",
+        "@metabindai/bindjs-react": "^1.0.7",
+        "@metabindai/bindjs-runtime": "^1.0.10",
         "@modelcontextprotocol/sdk": "^1.30.0",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",

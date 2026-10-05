@@ -18,8 +18,8 @@ importers:
   core:
     devDependencies:
       '@metabindai/bindjs-runtime':
-        specifier: ^1.0.9
-        version: 1.0.9
+        specifier: ^1.0.10
+        version: 1.0.10
       '@types/node':
         specifier: ^22.10.5
         version: 22.20.1
@@ -51,11 +51,11 @@ importers:
         specifier: workspace:*
         version: link:../../../react
       '@metabindai/bindjs-react':
-        specifier: ^1.0.5
-        version: 1.0.5(@emotion/is-prop-valid@1.4.0)(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(styled-components@6.5.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(three@0.183.2)
+        specifier: ^1.0.7
+        version: 1.0.7(@emotion/is-prop-valid@1.4.0)(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(styled-components@6.5.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(three@0.183.2)
       '@metabindai/bindjs-runtime':
-        specifier: ^1.0.9
-        version: 1.0.9
+        specifier: ^1.0.10
+        version: 1.0.10
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -103,11 +103,11 @@ importers:
         specifier: workspace:*
         version: link:../../../react
       '@metabindai/bindjs-react':
-        specifier: ^1.0.5
-        version: 1.0.5(@emotion/is-prop-valid@1.4.0)(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(styled-components@6.5.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(three@0.183.2)
+        specifier: ^1.0.7
+        version: 1.0.7(@emotion/is-prop-valid@1.4.0)(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(styled-components@6.5.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(three@0.183.2)
       '@metabindai/bindjs-runtime':
-        specifier: ^1.0.9
-        version: 1.0.9
+        specifier: ^1.0.10
+        version: 1.0.10
       '@modelcontextprotocol/sdk':
         specifier: ^1.30.0
         version: 1.30.0(zod@4.4.3)
@@ -170,11 +170,11 @@ importers:
         specifier: workspace:*
         version: link:../../../react
       '@metabindai/bindjs-react':
-        specifier: ^1.0.5
-        version: 1.0.5(@emotion/is-prop-valid@1.4.0)(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(styled-components@6.5.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(three@0.183.2)
+        specifier: ^1.0.7
+        version: 1.0.7(@emotion/is-prop-valid@1.4.0)(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(styled-components@6.5.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(three@0.183.2)
       '@metabindai/bindjs-runtime':
-        specifier: ^1.0.9
-        version: 1.0.9
+        specifier: ^1.0.10
+        version: 1.0.10
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -222,11 +222,11 @@ importers:
         specifier: workspace:*
         version: link:../../../react
       '@metabindai/bindjs-react':
-        specifier: ^1.0.5
-        version: 1.0.5(@emotion/is-prop-valid@1.4.0)(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(styled-components@6.5.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(three@0.183.2)
+        specifier: ^1.0.7
+        version: 1.0.7(@emotion/is-prop-valid@1.4.0)(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(styled-components@6.5.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(three@0.183.2)
       '@metabindai/bindjs-runtime':
-        specifier: ^1.0.9
-        version: 1.0.9
+        specifier: ^1.0.10
+        version: 1.0.10
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -274,11 +274,11 @@ importers:
         specifier: workspace:*
         version: link:../../../react
       '@metabindai/bindjs-react':
-        specifier: ^1.0.5
-        version: 1.0.5(@emotion/is-prop-valid@1.4.0)(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(styled-components@6.5.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(three@0.183.2)
+        specifier: ^1.0.7
+        version: 1.0.7(@emotion/is-prop-valid@1.4.0)(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(styled-components@6.5.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(three@0.183.2)
       '@metabindai/bindjs-runtime':
-        specifier: ^1.0.9
-        version: 1.0.9
+        specifier: ^1.0.10
+        version: 1.0.10
       '@monaco-editor/react':
         specifier: ^4.7.0
         version: 4.7.0(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -333,11 +333,11 @@ importers:
         version: link:../core
     devDependencies:
       '@metabindai/bindjs-react':
-        specifier: ^1.0.5
-        version: 1.0.5(@emotion/is-prop-valid@1.4.0)(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(styled-components@6.5.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(three@0.183.2)
+        specifier: ^1.0.7
+        version: 1.0.7(@emotion/is-prop-valid@1.4.0)(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(styled-components@6.5.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(three@0.183.2)
       '@metabindai/bindjs-runtime':
-        specifier: ^1.0.9
-        version: 1.0.9
+        specifier: ^1.0.10
+        version: 1.0.10
       '@testing-library/dom':
         specifier: ^10.4.1
         version: 10.4.1
@@ -884,15 +884,15 @@ packages:
   '@lit/reactive-element@2.1.2':
     resolution: {integrity: sha512-pbCDiVMnne1lYUIaYNN5wrwQXDtHaYtg7YEFPeW+hws6U47WeFvISGUWekPGKWOP1ygrs0ef0o1VJMk1exos5A==}
 
-  '@metabindai/bindjs-react@1.0.5':
-    resolution: {integrity: sha512-JjQ/x1pf892PJjrJ7RkDSHBLOMCLZMhBm1tzL6N7qZu7xN9+uCUoETfRz8Zjs6Vei/W/ZK9fmwX/44+CqzxRCA==}
+  '@metabindai/bindjs-react@1.0.7':
+    resolution: {integrity: sha512-7v+Jdu1m3SmUHgEhi+FAKziPXttJTjZRJj0KjGA8mfnrtr362p70Uj9sXAGQY6JtChpsMG9j6pare++J55xgjA==}
     peerDependencies:
       react: ^18.3.1
       react-dom: ^18.3.1
       styled-components: ^6.1.14
 
-  '@metabindai/bindjs-runtime@1.0.9':
-    resolution: {integrity: sha512-sGqdEaDX5njZvY6oeK6Db1ZWvLtTuYXn6ZQQvQbv18rsHSer0WuJ9UpryJ//cBEJuiddXmAIuQuwILFAdl0SZQ==}
+  '@metabindai/bindjs-runtime@1.0.10':
+    resolution: {integrity: sha512-kovOSn3SREtv57jWxnkb1uG5Tg1T56uesw4EgO/7I/HqDUnMl+jQM5D5H+v5zJQqRc9+lpIPtwihk4A0OenclQ==}
 
   '@modelcontextprotocol/sdk@1.30.0':
     resolution: {integrity: sha512-xKd8OIzlqNzcqcNumGAa6g+PW2kjD5vrpcKOnfldAUPP3j7lnqMPwlTXQm8gF+UwH72z0lqaRbjr9hqGz0eITA==}
@@ -3056,10 +3056,10 @@ snapshots:
     dependencies:
       '@lit-labs/ssr-dom-shim': 1.6.0
 
-  '@metabindai/bindjs-react@1.0.5(@emotion/is-prop-valid@1.4.0)(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(styled-components@6.5.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(three@0.183.2)':
+  '@metabindai/bindjs-react@1.0.7(@emotion/is-prop-valid@1.4.0)(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(styled-components@6.5.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(three@0.183.2)':
     dependencies:
       '@google/model-viewer': 4.3.1(three@0.183.2)
-      '@metabindai/bindjs-runtime': 1.0.9
+      '@metabindai/bindjs-runtime': 1.0.10
       '@observablehq/plot': 0.6.17
       fast-deep-equal: 3.1.3
       framer-motion: 12.43.0(@emotion/is-prop-valid@1.4.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -3081,7 +3081,7 @@ snapshots:
       - supports-color
       - three
 
-  '@metabindai/bindjs-runtime@1.0.9':
+  '@metabindai/bindjs-runtime@1.0.10':
     dependencies:
       '@types/node': 22.20.1
 

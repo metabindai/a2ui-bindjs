@@ -49,10 +49,10 @@
         "sync:native:android": "node scripts/build-catalog.mjs && node scripts/sync-native.mjs android/packages/a2ui-bindjs-android/src/main/res/raw a2ui_native.js"
     },
     "peerDependencies": {
-        "@metabindai/bindjs-runtime": "^1.0.9"
+        "@metabindai/bindjs-runtime": "^1.0.10"
     },
     "devDependencies": {
-        "@metabindai/bindjs-runtime": "^1.0.9",
+        "@metabindai/bindjs-runtime": "^1.0.10",
         "@types/node": "^22.10.5",
         "ajv": "^8.20.0",
         "ajv-formats": "^3.0.1",
